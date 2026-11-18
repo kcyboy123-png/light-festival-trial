@@ -43,7 +43,7 @@ export function createGame(world,{travel,resume,goView,project,reduceMotion}){
     }
     return false;
   }
-  function walkFeedback(blocked){if(blocked)say('길 바닥을 누르거나 왼쪽 별을 밀어 걸어요.');else if(flavorUntil){flavorUntil=0;render();}}
+  function walkFeedback(blocked){flavorUntil=blocked?clock+4:0;if(blocked)flavorText='길 바닥을 누르거나 왼쪽 별을 밀어 걸어요.';render();}
   function interact(){
     if(reveal||approaching!==null||modal())return;
     travel(null);
