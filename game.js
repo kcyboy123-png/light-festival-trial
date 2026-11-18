@@ -1,5 +1,5 @@
-import {MISSIONS,TEN_SAVE_KEY,freshTenProgress,restoreTenProgress,checkMission} from './mission-model.js?v=trial-20261118-6';
-import {createMissionPanel} from './mission-panel.js?v=trial-20261118-6';
+import {MISSIONS,TEN_SAVE_KEY,freshTenProgress,restoreTenProgress,checkMission} from './mission-model.js?v=trial-20261118-7';
+import {createMissionPanel} from './mission-panel.js?v=trial-20261118-7';
 import {festivalTiming} from './festival-timing.js';
 
 export function createGame(world,{travel,resume,goView,project,reduceMotion}){

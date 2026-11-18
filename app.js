@@ -5,10 +5,10 @@ import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
-import {createWorld} from './world.js?v=trial-20261118-6';
+import {createWorld} from './world.js?v=trial-20261118-7';
 import {nearestNode,route,walkStep,canTraverse} from './navigation.js';
-import {createExplorationInput} from './exploration-input.js?v=trial-20261118-6';
-import {createGame} from './game.js?v=trial-20261118-6';
+import {createExplorationInput} from './exploration-input.js?v=trial-20261118-7';
+import {createGame} from './game.js?v=trial-20261118-7';
 import {safeFollowAngle} from './camera-follow.js';
 
 const previewMode=new URLSearchParams(location.search).get('preview')==='1';

@@ -4,7 +4,7 @@ import {Water} from 'three/addons/objects/Water.js';
 import {createStarfox} from './character.js';
 import {createGardens} from './gardens.js';
 import {plantBorders,loadGardenModels} from './planted-borders.js';
-import {createAwakening} from './awakening.js?v=trial-20261118-6';
+import {createAwakening} from './awakening.js?v=trial-20261118-7';
 import {createCarousel,bakeMeshes} from './carousel-world.js';
 import {createFestivalReveal} from './festival-reveal.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
