@@ -5,18 +5,19 @@ import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
-import {createWorld} from './world.js?v=trial-20261118-7';
+import {createWorld} from './world.js?v=trial-20261119-1';
 import {nearestNode,route,walkStep,canTraverse} from './navigation.js';
-import {createExplorationInput} from './exploration-input.js?v=trial-20261118-7';
-import {createGame} from './game.js?v=trial-20261118-7';
+import {createExplorationInput} from './exploration-input.js';
+import {createGame} from './game.js?v=trial-20261119-1';
 import {safeFollowAngle} from './camera-follow.js';
+import {initialQuality} from './quality-policy.js?v=trial-20261119-1';
 
 const previewMode=new URLSearchParams(location.search).get('preview')==='1';
 const $=s=>document.querySelector(s),canvas=$('#scene'),reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function fail(message){$('#error-message').textContent=message;$('#error').hidden=false;$('#loading').hidden=true;}
 try{
-  let quality=matchMedia('(pointer: coarse)').matches?'light':'high';
-  try{const saved=localStorage.getItem('changyong-light-festival-quality-v1');if(saved==='high'||saved==='light')quality=saved;}catch{}
+  let savedQuality;try{savedQuality=localStorage.getItem('changyong-light-festival-quality-v1');}catch{}
+  let quality=initialQuality({coarse:matchMedia('(pointer: coarse)').matches,touchPoints:navigator.maxTouchPoints,saved:savedQuality});
   const renderer=new T.WebGLRenderer({canvas,antialias:false,alpha:false,powerPreference:'high-performance'});
   renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.85;renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.info.autoReset=false;
   const scene=new T.Scene();scene.matrixAutoUpdate=false;scene.background=new T.Color(0x091326);scene.fog=new T.FogExp2(0x12213b,.0032);
@@ -79,7 +80,10 @@ try{
   document.addEventListener('visibilitychange',()=>{hidden=document.hidden;if(hidden){travel(null);pointers.clear();down=null;}last=performance.now();});
   canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();contextLost=true;fail('3D 화면 연결이 잠시 끊겼어요. 다시 열기를 눌러 주세요.');});
   canvas.addEventListener('webglcontextrestored',()=>location.reload());
-  function frame(now){requestAnimationFrame(frame);if(hidden||contextLost)return;const gameDt=Math.min((now-last)/1000,.25),dt=Math.min(gameDt,.05);last=now;elapsed+=dt;
+  function frame(now){requestAnimationFrame(frame);if(hidden||contextLost)return;
+    // Circuit and video dialogs use DOM animation; keep the expensive city frame still behind them.
+    if(document.querySelector('dialog[open]')){last=now;return;}
+    const gameDt=Math.min((now-last)/1000,.25),dt=Math.min(gameDt,.05);last=now;elapsed+=dt;
     if(flight){if(viewpoint==='fox'){const dx=world.hero.position.x-flight.t.x,dz=world.hero.position.z-flight.t.z;flight.t.x+=dx;flight.t.z+=dz;flight.p.x+=dx;flight.p.z+=dz;}const t=Math.min(1,(now-flight.start)/(viewpoint==='fox'?650:1800)),u=t*t*(3-2*t);camera.position.lerpVectors(flight.from,flight.p,u);controls.target.lerpVectors(flight.target,flight.t,u);if(t===1)flight=null;}
     const input=movement.read(),distanceBefore=walkDistance,previousX=world.hero.position.x,previousZ=world.hero.position.z;let moving=false;
     if(input.x||input.y){

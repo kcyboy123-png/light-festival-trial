@@ -1,5 +1,6 @@
-import {MISSIONS,TEN_SAVE_KEY,freshTenProgress,restoreTenProgress,checkMission} from './mission-model.js?v=trial-20261118-7';
-import {createMissionPanel} from './mission-panel.js?v=trial-20261118-7';
+import {MISSIONS,TEN_SAVE_KEY,freshTenProgress,restoreTenProgress,checkMission} from './mission-model.js?v=trial-20261119-1';
+import {BRIEFS} from './mission-guide.js?v=trial-20261119-1';
+import {createMissionPanel} from './mission-panel.js?v=trial-20261119-1';
 import {festivalTiming} from './festival-timing.js';
 
 export function createGame(world,{travel,resume,goView,project,reduceMotion}){
@@ -14,7 +15,7 @@ export function createGame(world,{travel,resume,goView,project,reduceMotion}){
     const done=state.completed===10;
     $('#progress').textContent=state.completed+' / 10';$('#progress').setAttribute('aria-label','밝힌 장소 '+state.completed+'개 / 10개');
     $('#mission-name').textContent=done?'빛의 도시 완성!':(state.completed+1)+'. '+MISSIONS[state.completed].title;
-    $('#mission-line').textContent=done?'열 곳에 빛을 되찾았어요. 완성한 도시를 자유롭게 걸어 보세요.':near()?'도착했어요! 회로를 고쳐 이곳을 밝혀요.':'빛길을 따라가서 회로를 고쳐요.';
+    $('#mission-line').textContent=done?'열 곳에 빛을 되찾았어요. 완성한 도시를 자유롭게 걸어 보세요.':near()?BRIEFS[state.completed].situation:'빛길을 따라 '+MISSIONS[state.completed].title+'의 불을 고치러 가요.';
     $('#mission-action').textContent=done?'여우 따라 보기':near()?'회로 고치기 · E':'빛길 따라 걷기 · E';
     $('#chapter').textContent=done?'내가 깨운 빛의 도시':'별여우와 함께 빛을 되찾아요';
     $('#save-note').hidden=storageOK;
@@ -27,7 +28,7 @@ export function createGame(world,{travel,resume,goView,project,reduceMotion}){
       if(i!==state.completed||!checkMission(MISSIONS[i],draft).passed)return;
       state.drafts[i]=draft;state.completed++;save();
       effect={index:i,elapsed:0,origin:world.hero.position.clone()};
-      $('#light-toast span').textContent=MISSIONS[i].title+'에 빛이 돌아왔어요!';
+      $('#light-toast span').textContent=BRIEFS[i].reward;
       $('#light-toast').hidden=false;render();
     },
     onClose(){goView('fox');render();$('#mission-action').focus({preventScroll:true});}
