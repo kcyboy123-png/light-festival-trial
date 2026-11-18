@@ -48,10 +48,10 @@ export function createAwakening(scene, lightMats) {
       sparkle=wakeLight(position)*(.25+.75*pow(.5+.5*sin(time*2.+phase*50.),3.))*wakeEnabled;
       vec4 view=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*view;gl_PointSize=clamp(95./-view.z,1.5,6.)*pixelRatio;}`,
     fragmentShader:'varying float sparkle;void main(){float r=length(gl_PointCoord-.5)*2.;gl_FragColor=vec4(1.7,1.1,.5,pow(max(0.,1.-r),2.)*sparkle);}'});
-  scene.add(new T.Points(geometry,material));
+  const sparks=new T.Points(geometry,material);sparks.visible=false;scene.add(sparks);
   let progress=[0,0,0];
   return {
-    set(values){enabled.value=1;progress=values;values.forEach((v,i)=>radii.value.setComponent(i,v>0?T.MathUtils.lerp(.1,LIGHT_RADII[i],v):-5));},
+    set(values){enabled.value=1;progress=values;sparks.visible=values.some(v=>v>0);values.forEach((v,i)=>radii.value.setComponent(i,v>0?T.MathUtils.lerp(.1,LIGHT_RADII[i],v):-5));},
     setFestival(radius,origin,pulse=0){festivalRadius.value=radius;festivalOrigin.value.copy(origin);festivalPulse.value=pulse;},
     update(time,pixelRatio){material.uniforms.time.value=time;material.uniforms.pixelRatio.value=pixelRatio;lights.forEach((l,i)=>l.intensity=progress[i]*62);},
     get progress(){return progress;},get enabled(){return enabled.value===1;},get radii(){return radii.value.toArray();}

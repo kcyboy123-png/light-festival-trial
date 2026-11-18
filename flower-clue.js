@@ -22,6 +22,6 @@ export function createFlowerClue(scene,stand,symbol='bridge'){
   for(const radius of [.65,.73]){const rim=new T.Mesh(new T.TorusGeometry(radius,.018,6,48),gold);rim.rotation.x=Math.PI/2;rim.position.y=.17;root.add(rim);}
   const gems=new T.InstancedMesh(new T.OctahedronGeometry(.045),gold,12),dummy=new T.Object3D();for(let i=0;i<12;i++){const a=i/12*Math.PI*2;dummy.position.set(Math.cos(a)*.7,.19,Math.sin(a)*.7);dummy.updateMatrix();gems.setMatrixAt(i,dummy.matrix);}root.add(gems);
   if(symbol==='blossom'){sign.visible=false;root.scale.setScalar(.48);root.position.copy(stand).add(new T.Vector3(.9,0,.5));petal.color.set(0xacb9d9);}
-  let visible=0;
-  return {root,tint(color){petal.color.set(color);petal.emissive.set(color);},position:root.position.clone().add(new T.Vector3(0,1.4,0)),sway(value){root.rotation.z=value;},setReveal(v){visible=T.MathUtils.smoothstep(v,.4,.95);petals.forEach(p=>p.rotation.x=-(1-visible)*2.3);signMat.emissiveIntensity=visible*1.3;petal.emissiveIntensity=visible*(symbol==='blossom'?.16:.35);root.visible=v>0;},get state(){return {revealed:visible,position:root.position.toArray()};}};
+  let visible=0,lastShown;
+  return {root,tint(color){petal.color.set(color);petal.emissive.set(color);},position:root.position.clone().add(new T.Vector3(0,1.4,0)),sway(value){root.rotation.z=value;},setReveal(v){const next=T.MathUtils.smoothstep(v,.4,.95),shown=v>0;if(visible===next&&lastShown===shown)return;visible=next;lastShown=shown;petals.forEach(p=>p.rotation.x=-(1-visible)*2.3);signMat.emissiveIntensity=visible*1.3;petal.emissiveIntensity=visible*(symbol==='blossom'?.16:.35);root.visible=shown;},get state(){return {revealed:visible,position:root.position.toArray()};}};
 }

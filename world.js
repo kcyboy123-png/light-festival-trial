@@ -3,7 +3,7 @@ import {softenOccluder,inFoxCutout} from './camera-visibility.js';
 import {Water} from 'three/addons/objects/Water.js';
 import {createStarfox} from './character.js';
 import {createGardens} from './gardens.js';
-import {plantBorders} from './planted-borders.js';
+import {plantBorders,loadGardenModels} from './planted-borders.js';
 import {createAwakening} from './awakening.js';
 import {createCarousel} from './carousel-world.js';
 import {createFestivalReveal} from './festival-reveal.js';
@@ -14,6 +14,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 const V=(x,y,z)=>new T.Vector3(x,y,z), TAU=Math.PI*2;
 const smooth=(a,b,x)=>T.MathUtils.smoothstep(x,a,b);
 export async function createWorld(scene,renderer,quality='high'){
+  const [character,plantModels,skyTexture]=await Promise.all([createStarfox(renderer),loadGardenModels(),new T.TextureLoader().loadAsync('./assets/night-panorama.webp')]);
   let seed=917;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
   const staticRoot=new T.Group();scene.add(staticRoot);
   const walkMeshes=[],lightMats=[],petals=[],nodes=[],edges=[],stations=[],obstacles=[];
@@ -116,22 +117,24 @@ export async function createWorld(scene,renderer,quality='high'){
   // Keep the lamp base outside the circular walking line, including the fox's clearance.
   lantern(3.45,1.2,-1.2,.72,2,2);stations[2]={position:V(3.45,4.8,-1.2),node:loop[12],name:'광장의 가로등'};
   const gardenStats=createGardens(scene,{root:staticRoot,mesh,tube,cyl,ring,arch:pointedArch,mat,glow,stone,gold,trim,soil,amber:amber2,violet,petalGeometry,random,cameraFocus,cameraFollowing});
-  gardenStats.transplants=await plantBorders(scene,lightMats);
+  gardenStats.transplants=plantBorders(scene,lightMats,plantModels);
   // Portal frames in the foreground echo the original image's overhead architecture.
   for(const side of [-1,1]){let x=side*15;const pts=[V(x,0,15),V(x,10,10),V(x*.9,17,0),V(x*.55,22,-6),V(0,23,-9)];tube(pts,.32,stone);tube(pts.map(p=>p.clone().add(V(-side*.34,0,.12))),.045,amber2);}
   for(const m of [stone,trim,gold,amber2,violet,...petalMaterials])softenOccluder(m,cameraFocus,cameraFollowing);
   // Keep nearby material batches separate so off-screen districts can be culled.
   staticRoot.updateMatrixWorld(true);const batches=new Map();
   staticRoot.traverse(o=>{if(!o.isMesh||walkMeshes.includes(o)||o.material.transparent||o.material===curtainMaterial)return;const g=o.geometry.clone().applyMatrix4(o.matrixWorld);if(!g.index)g.setIndex(Array.from({length:g.attributes.position.count},(_,i)=>i));g.computeBoundingBox();const center=g.boundingBox.getCenter(new T.Vector3()),key=`${o.material.uuid}:${Math.floor(center.x/36)}:${Math.floor(center.z/36)}`;if(!batches.has(key))batches.set(key,{m:o.material,geos:[],objects:[]});batches.get(key).geos.push(g);batches.get(key).objects.push(o);});
-  for(const {m,geos,objects}of batches.values()){const merged=mergeGeometries(geos,false);if(merged){const o=new T.Mesh(merged,m);o.castShadow=true;o.receiveShadow=true;scene.add(o);for(const old of objects)old.removeFromParent();}geos.forEach(g=>g.dispose());}
-  const loader=new T.TextureLoader();const skyTexture=await loader.loadAsync('./assets/night-panorama.webp');skyTexture.colorSpace=T.SRGBColorSpace;skyTexture.anisotropy=4;
+  for(const {m,geos,objects}of batches.values()){const merged=mergeGeometries(geos,false);if(merged){const o=new T.Mesh(merged,m);o.updateMatrix();o.matrixAutoUpdate=false;o.castShadow=true;o.receiveShadow=true;scene.add(o);for(const old of objects)old.removeFromParent();}geos.forEach(g=>g.dispose());}
+  const emptyGroups=[];staticRoot.traverse(o=>{if(o.isGroup)emptyGroups.push(o);});for(const o of emptyGroups.reverse())if(o!==staticRoot&&!o.children.length)o.removeFromParent();
+  staticRoot.traverse(o=>{o.updateMatrix();o.matrixAutoUpdate=false;});
+  skyTexture.colorSpace=T.SRGBColorSpace;skyTexture.anisotropy=4;
   const sky=mesh(new T.CylinderGeometry(150,150,105,160,1,true),new T.MeshBasicMaterial({map:skyTexture,side:T.BackSide,fog:false,color:0x9aaacc}),[0,43,0],scene);sky.rotation.y=-Math.PI*.2;sky.castShadow=false;sky.receiveShadow=false;
   const moonCanvas=document.createElement('canvas');moonCanvas.width=moonCanvas.height=512;const moonCtx=moonCanvas.getContext('2d');moonCtx.fillStyle='#b8c8de';moonCtx.fillRect(0,0,512,512);
   for(let i=0;i<190;i++){const x=random()*512,y=random()*512,r=3+random()*33;const crater=moonCtx.createRadialGradient(x,y,0,x,y,r);crater.addColorStop(0,'rgba(55,79,113,.15)');crater.addColorStop(.75,'rgba(65,84,117,.09)');crater.addColorStop(1,'rgba(215,226,246,.1)');moonCtx.fillStyle=crater;moonCtx.beginPath();moonCtx.arc(x,y,r,0,TAU);moonCtx.fill();}
   const moonTexture=new T.CanvasTexture(moonCanvas);moonTexture.colorSpace=T.SRGBColorSpace;
   const moonDisc=mesh(new T.SphereGeometry(2.8,40,24),new T.MeshBasicMaterial({map:moonTexture,color:0xc3d7fa,fog:false}),[-35,30,-78],scene);moonDisc.castShadow=false;moonDisc.receiveShadow=false;
   // Animated aurora curtains are geometry in the world, not a screen overlay.
-  const auroras=[];for(let layer=0;layer<3;layer++){const g=new T.PlaneGeometry(180,18,140,12);const p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i);p.setXYZ(i,x,25+y+Math.sin(x*.045+layer*1.6)*6,-75-layer*12+Math.sin(x*.035)*8);}g.computeVertexNormals();const m=new T.ShaderMaterial({transparent:true,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending,uniforms:{time:{value:0},strength:{value:1},phase:{value:layer*1.7}},vertexShader:'varying vec2 vUv;uniform float time;uniform float phase;void main(){vUv=uv;vec3 p=position;p.y+=sin(p.x*.075+time*.15+phase)*1.8;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}',fragmentShader:`varying vec2 vUv;uniform float time;uniform float strength;uniform float phase;void main(){float wave=.3+sin(vUv.x*7.+time*.07+phase)*.13+sin(vUv.x*19.+phase)*.025;float edge=exp(-pow((vUv.y-wave)*10.,2.));float curtain=exp(-max(0.,vUv.y-wave)*5.)*smoothstep(wave-.04,wave+.03,vUv.y);float threads=.6+.4*pow(.5+.5*sin(vUv.x*550.+sin(vUv.x*44.+time*.13)*4.),3.);float fade=smoothstep(0.,.15,vUv.x)*smoothstep(1.,.8,vUv.x)*smoothstep(1.,.7,vUv.y)*smoothstep(0.,.12,vUv.y);vec3 col=mix(vec3(.05,.8,.72),vec3(.58,.12,.85),clamp(.3+sin(vUv.x*6.+phase)*.3+smoothstep(.3,.85,vUv.y)*.5,0.,1.));float a=(edge*.48+curtain*.21*threads)*fade*strength;gl_FragColor=vec4(col*1.4,a);}`});const o=mesh(g,m,[0,0,0],scene);auroras.push(m);}
+  const auroras=[];for(let layer=0;layer<3;layer++){const g=new T.PlaneGeometry(180,18,140,12);const p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i);p.setXYZ(i,x,25+y+Math.sin(x*.045+layer*1.6)*6,-75-layer*12+Math.sin(x*.035)*8);}g.computeVertexNormals();const m=new T.ShaderMaterial({transparent:true,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending,uniforms:{time:{value:0},strength:{value:1},phase:{value:layer*1.7}},vertexShader:'varying vec2 vUv;uniform float time;uniform float phase;void main(){vUv=uv;vec3 p=position;p.y+=sin(p.x*.075+time*.15+phase)*1.8;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}',fragmentShader:`varying vec2 vUv;uniform float time;uniform float strength;uniform float phase;void main(){float wave=.3+sin(vUv.x*7.+time*.07+phase)*.13+sin(vUv.x*19.+phase)*.025;float edge=exp(-pow((vUv.y-wave)*10.,2.));float curtain=exp(-max(0.,vUv.y-wave)*5.)*smoothstep(wave-.04,wave+.03,vUv.y);float threads=.6+.4*pow(.5+.5*sin(vUv.x*550.+sin(vUv.x*44.+time*.13)*4.),3.);float fade=smoothstep(0.,.15,vUv.x)*smoothstep(1.,.8,vUv.x)*smoothstep(1.,.7,vUv.y)*smoothstep(0.,.12,vUv.y);vec3 col=mix(vec3(.05,.8,.72),vec3(.58,.12,.85),clamp(.3+sin(vUv.x*6.+phase)*.3+smoothstep(.3,.85,vUv.y)*.5,0.,1.));float a=(edge*.48+curtain*.21*threads)*fade*strength;gl_FragColor=vec4(col*1.4,a);}`});const o=mesh(g,m,[0,0,0],scene);auroras.push(o);}
   const normalSize=128,data=new Uint8Array(normalSize*normalSize*4);for(let y=0;y<normalSize;y++)for(let x=0;x<normalSize;x++){const i=(y*normalSize+x)*4,u=x/normalSize*TAU,v=y/normalSize*TAU;data[i]=128+Math.sin(u*5+Math.cos(v*3)) *26;data[i+1]=128+Math.cos(v*7+Math.sin(u*2))*24;data[i+2]=244;data[i+3]=255;}
   const normals=new T.DataTexture(data,normalSize,normalSize);normals.wrapS=normals.wrapT=T.RepeatWrapping;normals.magFilter=normals.minFilter=T.LinearFilter;normals.needsUpdate=true;
   const water=new Water(new T.PlaneGeometry(350,350),{textureWidth:1536,textureHeight:1536,waterNormals:normals,sunDirection:moon.position.clone().normalize(),sunColor:0x8199c9,waterColor:0x071323,distortionScale:.38,alpha:1,fog:true});water.rotation.x=-Math.PI/2;water.position.y=.03;scene.add(water);water.material.uniforms.size.value=5;
@@ -140,7 +143,7 @@ export async function createWorld(scene,renderer,quality='high'){
   water.onBeforeRender=function(renderer,scene,camera){const now=performance.now(),jumped=reflectionPosition.distanceToSquared(camera.position)>4||Math.abs(reflectionRotation.dot(camera.quaternion))<.98;if(lightQuality&&!jumped&&now-lastReflection<1000/20)return;reflect.call(this,renderer,scene,camera);reflectionFrames++;lastReflection=now;reflectionPosition.copy(camera.position);reflectionRotation.copy(camera.quaternion);};
   const sparksG=new T.BufferGeometry(),sparkPos=[],sparkSeed=[];for(let i=0;i<260;i++){const a=random()*TAU,r=2+random()*26;sparkPos.push(Math.cos(a)*r,1+random()*10,-7+Math.sin(a)*r);sparkSeed.push(random());}sparksG.setAttribute('position',new T.Float32BufferAttribute(sparkPos,3));sparksG.setAttribute('phase',new T.Float32BufferAttribute(sparkSeed,1));
   const sparksM=new T.ShaderMaterial({transparent:true,depthWrite:false,blending:T.AdditiveBlending,uniforms:{time:{value:0},strength:{value:1},pixelRatio:{value:1}},vertexShader:'attribute float phase;uniform float time;uniform float pixelRatio;varying float alpha;void main(){vec3 p=position;p.y+=sin(time*.3+phase*20.)*.4;p.x+=cos(time*.2+phase*9.)*.17;vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp(70./-mv.z,1.,5.)*pixelRatio;alpha=.35+.65*pow(.5+.5*sin(time+phase*40.),3.);}',fragmentShader:'uniform float strength;varying float alpha;void main(){float d=length(gl_PointCoord-.5)*2.;gl_FragColor=vec4(1.8,1.4,.7,pow(max(0.,1.-d),2.)*alpha*strength);}'});scene.add(new T.Points(sparksG,sparksM));
-  const character=await createStarfox(renderer);const hero=character.hero;hero.position.copy(nodes[22]);scene.add(hero);
+  const hero=character.hero;hero.position.copy(nodes[22]);scene.add(hero);
   const wisp=mesh(new T.SphereGeometry(.095,16,16),new T.MeshBasicMaterial({color:new T.Color(3,1.8,.7)}),[0,0,0],scene);
   const haloTexture=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const cx=c.getContext('2d'),g=cx.createRadialGradient(64,64,0,64,64,64);g.addColorStop(0,'rgba(255,225,160,.8)');g.addColorStop(.12,'rgba(255,197,100,.32)');g.addColorStop(1,'rgba(255,170,80,0)');cx.fillStyle=g;cx.fillRect(0,0,128,128);return new T.CanvasTexture(c);})();
   const halo=new T.Sprite(new T.SpriteMaterial({map:haloTexture,color:0xffd69a,transparent:true,depthWrite:false,blending:T.AdditiveBlending}));halo.scale.setScalar(1.2);scene.add(halo);
@@ -152,13 +155,14 @@ export async function createWorld(scene,renderer,quality='high'){
   const fountainClue=createFlowerClue(scene,nodes[loop[90]],'carousel');fountainClue.node=loop[90];
   const curiosities=createGardenCuriosities(scene,[nodes[mainPath.ids[16]],nodes[bridge.ids[16]],nodes[loop[48]],nodes[carouselLoop[44]]]);
   const plazas=[{x:0,z:-8,y:1.2,inner:5.15,outer:7.65},{x:-25,z:14,y:1.2,inner:6.6,outer:7.95}];
-  const floorRay=new T.Raycaster();
-  function onPath(p,from=null){if(obstacles.some(o=>{const d=Math.hypot(p.x-o.x,p.z-o.z);return d<o.radius&&(!from||d<=Math.hypot(from.x-o.x,from.z-o.z)+.000001);}))return false;floorRay.set(V(p.x,6,p.z),V(0,-1,0));return floorRay.intersectObjects(walkMeshes,false).length>0;}
+  const floorRay=new T.Raycaster(),floorOrigin=new T.Vector3(),floorDown=V(0,-1,0),floorHits=[];
+  function floorBelow(p){floorOrigin.set(p.x,6,p.z);floorHits.length=0;floorRay.set(floorOrigin,floorDown);return floorRay.intersectObjects(walkMeshes,false,floorHits)[0];}
+  function onPath(p,from=null){if(obstacles.some(o=>{const d=Math.hypot(p.x-o.x,p.z-o.z);return d<o.radius&&(!from||d<=Math.hypot(from.x-o.x,from.z-o.z)+.000001);}))return false;return !!floorBelow(p);}
   function floorBlocked(ray,floor){
     const meshes=[];scene.traverse(o=>{if(!o.isMesh||walkMeshes.includes(o))return;for(let p=o;p;p=p.parent)if(p===hero||!p.visible)return;const materials=Array.isArray(o.material)?o.material:[o.material];if(materials.some(m=>!m.transparent&&m.opacity>0))meshes.push(o);});
     const far=ray.far;ray.far=floor.distance-.04;const hits=ray.intersectObjects(meshes,false);ray.far=far;
     return hits.some(h=>{const m=Array.isArray(h.object.material)?h.object.material[h.face.materialIndex]:h.object.material;if(m.transparent||(m.userData.foxCutout&&cameraFollowing.value>.5&&inFoxCutout(h.point,ray.ray.origin,cameraFocus.value)))return false;
-      floorRay.set(V(h.point.x,6,h.point.z),V(0,-1,0));const below=floorRay.intersectObjects(walkMeshes,false)[0];return !below||h.point.y>below.point.y+.15;
+      const below=floorBelow(h.point);return !below||h.point.y>below.point.y+.15;
     });
   }
   const festival=createFestivalReveal(scene);
@@ -174,17 +178,17 @@ export async function createWorld(scene,renderer,quality='high'){
     ambient.intensity=game?.17+first*.12+full*.28:.4+full*.35;moon.intensity=game?.32+full*.28:.85;
     guideLight.intensity=game?3+festival.energy*32:0;guideLight.color.set(festival.energy>0?0xffd49b:0xcce6ff);guideLight.position.set(hero.position.x-2,hero.position.y+4,hero.position.z+2);
     curtainMaterial.uniforms.time.value=reduceMotion?0:time;curtainMaterial.uniforms.light.value=full;water.material.uniforms.time.value=reduceMotion?0:time*.23;
-    for(const m of auroras){m.uniforms.strength.value=full*.65;m.uniforms.time.value=reduceMotion?0:time;}
+    for(const o of auroras){o.visible=full>0;const m=o.material;m.uniforms.strength.value=full*.65;m.uniforms.time.value=reduceMotion?0:time;}
     sparksM.uniforms.time.value=reduceMotion?0:time;sparksM.uniforms.strength.value=.02+full*.98;sparksM.uniforms.pixelRatio.value=renderer.getPixelRatio();
     for(const p of petals)p.part.rotation.x=(1-full)*-.4+(reduceMotion?0:Math.sin(time*.35+p.layer)*.008*full);
-    wisp.position.copy(hero.position).add(V(.85,1.6+(reduceMotion?0:Math.sin(time*1.8)*.12),-.3));halo.position.copy(wisp.position);hero.position.y=(hero.userData.baseY||1.2);
+    wisp.position.set(hero.position.x+.85,hero.position.y+1.6+(reduceMotion?0:Math.sin(time*1.8)*.12),hero.position.z-.3);halo.position.copy(wisp.position);hero.position.y=(hero.userData.baseY||1.2);
     awakening.update(reduceMotion?0:time,renderer.getPixelRatio());
     if(!game)carousel.setLight(full);carousel.update(time,dt,reduceMotion);
     if(!game){firstClue.setReveal(first);bridgeClue.setReveal(first);fountainClue.setReveal(full);}
     curiosities.update(dt,hero.position,reduceMotion);festival.update(renderer.getPixelRatio());
   }
   function snap(state){current=state;update(0,1,state,true);}
-  const updateScene=update;function updateWithHero(time,dt,state,reduceMotion){updateScene(time,dt,state,reduceMotion);fountainJets.uniforms.light.value=awakening.enabled?awakening.progress[2]:smooth(1.05,1.95,current);fountainJets.uniforms.time.value=reduceMotion?0:time;contact.position.set(hero.position.x,(hero.userData.baseY||1.2)+.025,hero.position.z);character.update(dt,moving,reduceMotion);}
+  const updateScene=update;function updateWithHero(time,dt,state,reduceMotion){updateScene(time,dt,state,reduceMotion);fountainJets.uniforms.light.value=awakening.enabled?awakening.progress[2]:smooth(1.05,1.95,current);fountainJets.uniforms.time.value=reduceMotion?0:time;jetMesh.visible=fountainJets.uniforms.light.value>0;contact.position.set(hero.position.x,(hero.userData.baseY||1.2)+.025,hero.position.z);character.update(dt,moving,reduceMotion);}
   function setQuality(v){lightQuality=v==='light';lastReflection=-Infinity;water.getRenderTarget().setSize(lightQuality?960:1536,lightQuality?960:1536);const size=lightQuality?1024:2048;if(moon.shadow.mapSize.x!==size){moon.shadow.map?.dispose();moon.shadow.map=null;moon.shadow.mapSize.set(size,size);renderer.shadowMap.needsUpdate=true;}}
   setQuality(quality);
   return {floorBlocked,cameraFollowing,nodes,edges,plazas,obstacles,onPath,curiosities,hero,walkMeshes,water,gardenStats,stations,awakening,carousel,festival,firstClue,bridgeClue,fountainClue,carouselStation,update:updateWithHero,snap,setQuality,setMoving(v){moving=v;},get reflectionFrames(){return reflectionFrames;},get current(){return current;}};

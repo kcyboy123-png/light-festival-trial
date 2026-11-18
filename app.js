@@ -19,7 +19,7 @@ try{
   try{const saved=localStorage.getItem('changyong-light-festival-quality-v1');if(saved==='high'||saved==='light')quality=saved;}catch{}
   const renderer=new T.WebGLRenderer({canvas,antialias:false,alpha:false,powerPreference:'high-performance'});
   renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.85;renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.info.autoReset=false;
-  const scene=new T.Scene();scene.background=new T.Color(0x091326);scene.fog=new T.FogExp2(0x12213b,.0032);
+  const scene=new T.Scene();scene.matrixAutoUpdate=false;scene.background=new T.Color(0x091326);scene.fog=new T.FogExp2(0x12213b,.0032);
   const camera=new T.PerspectiveCamera(48,innerWidth/innerHeight,.15,400);
   const controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.dampingFactor=.07;controls.enablePan=false;controls.minDistance=3.5;controls.maxDistance=74;controls.minPolarAngle=.5;controls.maxPolarAngle=Math.PI*.48;controls.rotateSpeed=.5;controls.zoomSpeed=.65;
   const pmrem=new T.PMREMGenerator(renderer),environment=new RoomEnvironment();const env=pmrem.fromScene(environment,.04);scene.environment=env.texture;environment.dispose();pmrem.dispose();
@@ -65,7 +65,8 @@ try{
   canvas.addEventListener('click',e=>{if(game?.blocked){down=null;return;}if(!down||down.multi||down.moved||Math.hypot(e.clientX-down.x,e.clientY-down.y)>6||performance.now()-down.time>700){down=null;return;}down=null;pointer.set(e.clientX/innerWidth*2-1,1-e.clientY/innerHeight*2);raycaster.setFromCamera(pointer,camera);if(game?.tapClue(raycaster))return;const hit=raycaster.intersectObjects(world.walkMeshes,false)[0];if(!hit||world.floorBlocked(raycaster,hit)){game?.walkFeedback(true);return;}game?.walkFeedback(false);const next=nearestNode(world.nodes,hit.point);travel(next);$('#hint').textContent='빛을 따라 걸어가고 있어요';});
   function travel(next){if(next===null){walking=[];return;}if(!previewMode&&viewpoint!=='fox')goView('fox');activeNode=nearestNode(world.nodes,world.hero.position);walking=route(world.nodes,world.edges,activeNode,next);if(walking[0]===activeNode&&world.hero.position.distanceTo(world.nodes[activeNode])<.15)walking.shift();}
   function resume(node){walking=[];world.hero.position.copy(world.nodes[node]);world.hero.userData.baseY=world.nodes[node].y;goView('fox',true);}
-  function project(position){const p=position.clone().project(camera);return {x:(p.x+1)/2*innerWidth,y:(1-p.y)/2*innerHeight,z:p.z};}
+  const projectPoint=new T.Vector3(),movementRight=new T.Vector3(),walkDelta=new T.Vector3(),walkNext=new T.Vector3();
+  function project(position){const p=projectPoint.copy(position).project(camera);return {x:(p.x+1)/2*innerWidth,y:(1-p.y)/2*innerHeight,z:p.z};}
   function turn(x,z,dt){const a=Math.atan2(x,z)-world.hero.rotation.y;world.hero.rotation.y+=Math.atan2(Math.sin(a),Math.cos(a))*Math.min(1,dt*12);}
   if(navigator.maxTouchPoints>0)$('#explore-controls p').innerHTML='조이스틱을 밀어 걷기<br>가까이서 살펴보기';
   const movement=createExplorationInput(()=>previewMode||!!game?.blocked,()=>game?.interact(),()=>game?.hint(),()=>goView('fox'),()=>game?.openBook());
@@ -73,7 +74,7 @@ try{
   const guide=new T.Group();scene.add(guide);const guideMat=new T.MeshBasicMaterial({color:0xffdfa5,transparent:true,opacity:.8,depthWrite:false});
   const guideGeometry=new T.OctahedronGeometry(.14);for(let i=0;i<10;i++){const dot=new T.Mesh(guideGeometry,guideMat);dot.scale.set(.7,1.3,.7);dot.rotation.z=Math.PI/8;guide.add(dot);}
   let guideClock=0,guideRecomputes=0,guideFrom=-1,guideTo=-1,guideIds=[];
-  function updateGuide(dt){const info=game?.state.exploration;guide.visible=!!info&&info.level>=2&&!game.blocked&&!info.near;if(!guide.visible)return;guideClock+=dt;const from=nearestNode(world.nodes,world.hero.position);if(from!==guideFrom||info.node!==guideTo){guideFrom=from;guideTo=info.node;guideIds=route(world.nodes,world.edges,from,info.node);guideRecomputes++;}const ids=guideIds;let distance=0,previous=world.hero.position;const points=[];for(const id of ids){const v=world.nodes[id];distance+=v.distanceTo(previous);if(distance>(info.level>=3?9:4))break;if(distance>.7)points.push(v);previous=v;}guide.children.forEach((dot,i)=>{dot.visible=i<points.length;if(dot.visible){dot.position.copy(points[i]);dot.position.y+=.25+(reduceMotion?0:Math.sin(guideClock*2-i*.6)*.08);}});guideMat.opacity=reduceMotion?.75:.5+Math.sin(guideClock*1.5)*.25;}
+  function updateGuide(dt){const info=game?.guide;guide.visible=!!info&&info.level>=2&&!game.blocked&&!info.near;if(!guide.visible)return;guideClock+=dt;const from=nearestNode(world.nodes,world.hero.position);if(from!==guideFrom||info.node!==guideTo){guideFrom=from;guideTo=info.node;guideIds=route(world.nodes,world.edges,from,info.node);guideRecomputes++;}const ids=guideIds;let distance=0,previous=world.hero.position;const points=[];for(const id of ids){const v=world.nodes[id];distance+=v.distanceTo(previous);if(distance>(info.level>=3?9:4))break;if(distance>.7)points.push(v);previous=v;}guide.children.forEach((dot,i)=>{dot.visible=i<points.length;if(dot.visible){dot.position.copy(points[i]);dot.position.y+=.25+(reduceMotion?0:Math.sin(guideClock*2-i*.6)*.08);}});guideMat.opacity=reduceMotion?.75:.5+Math.sin(guideClock*1.5)*.25;}
   let last=performance.now(),elapsed=0,frameCount=0,renderTime=0,hidden=false,contextLost=false,lastShadow=0;
   addEventListener('blur',()=>{travel(null);pointers.clear();down=null;});
   document.addEventListener('visibilitychange',()=>{hidden=document.hidden;if(hidden){travel(null);pointers.clear();down=null;}last=performance.now();});
@@ -88,12 +89,12 @@ try{
       // Keep a held direction straight while the camera catches up behind the fox.
       if(!lastInput.lengthSq()||(!input.fromStick&&Math.hypot(input.x-lastInput.x,input.y-lastInput.y)>.35)){inputForward.copy(controls.target).sub(camera.position);inputForward.y=0;inputForward.normalize();}
       lastInput.set(input.x,input.y);
-      const right=new T.Vector3(-inputForward.z,0,inputForward.x),delta=right.multiplyScalar(input.x).addScaledVector(inputForward,-input.y).multiplyScalar(dt*3.6);
+      const right=movementRight.set(-inputForward.z,0,inputForward.x),delta=right.multiplyScalar(input.x).addScaledVector(inputForward,-input.y).multiplyScalar(dt*3.6);
       let pos=world.hero.position;for(const [x,z]of [[delta.x,delta.z],[delta.x,0],[0,delta.z]]){const candidate=walkStep(world.nodes,world.edges,world.hero.position,x,z,world.plazas);if(canTraverse(world.hero.position,candidate,world.onPath)){pos=candidate;break;}}const dx=pos.x-world.hero.position.x,dz=pos.z-world.hero.position.z;
       if(Math.hypot(dx,dz)>.0001){world.hero.position.x=pos.x;world.hero.position.z=pos.z;world.hero.userData.baseY=pos.y;turn(dx,dz,dt);walkDistance+=Math.hypot(dx,dz);moving=true;}
-    }else if(walking.length&&!game?.state.revealing&&!document.querySelector('dialog[open]')){
-      const to=world.nodes[walking[0]],delta=to.clone().sub(world.hero.position);delta.y=0;const d=delta.length(),step=Math.min(d,dt*3.6);
-      if(d<.08){activeNode=walking.shift();world.hero.userData.baseY=to.y;}else{const next=world.hero.position.clone().addScaledVector(delta,step/d);if(!canTraverse(world.hero.position,next,world.onPath)){walking=[];}else{world.hero.position.copy(next);world.hero.userData.baseY=T.MathUtils.damp(world.hero.userData.baseY||1.2,to.y,8,dt);turn(delta.x,delta.z,dt);walkDistance+=step;moving=true;}}
+    }else if(walking.length&&!game?.revealing&&!document.querySelector('dialog[open]')){
+      const to=world.nodes[walking[0]],delta=walkDelta.copy(to).sub(world.hero.position);delta.y=0;const d=delta.length(),step=Math.min(d,dt*3.6);
+      if(d<.08){activeNode=walking.shift();world.hero.userData.baseY=to.y;}else{const next=walkNext.copy(world.hero.position).addScaledVector(delta,step/d);if(!canTraverse(world.hero.position,next,world.onPath)){walking=[];}else{world.hero.position.copy(next);world.hero.userData.baseY=T.MathUtils.damp(world.hero.userData.baseY||1.2,to.y,8,dt);turn(delta.x,delta.z,dt);walkDistance+=step;moving=true;}}
     }
     if(!input.x&&!input.y)lastInput.set(0,0);
     movingTime=moving||walking.length?movingTime+dt:0;

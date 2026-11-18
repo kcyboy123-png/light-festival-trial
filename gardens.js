@@ -213,7 +213,7 @@ export function createGardens(scene, {root, mesh, tube, cyl, ring, arch, mat, gl
   }
   let instances=0;
   for(const {g,m,transforms}of batches.values()){
-    const o=new T.InstancedMesh(g,m,transforms.length);transforms.forEach((matrix,i)=>o.setMatrixAt(i,matrix));o.castShadow=true;o.receiveShadow=true;o.computeBoundingSphere();scene.add(o);instances+=transforms.length;
+    const o=new T.InstancedMesh(g,m,transforms.length);transforms.forEach((matrix,i)=>o.setMatrixAt(i,matrix));o.castShadow=true;o.receiveShadow=true;o.computeBoundingSphere();o.updateMatrix();o.matrixAutoUpdate=false;scene.add(o);instances+=transforms.length;
   }
   return {instances,trees:4,flowerbeds:4,terraces:6,plantedIslands:7,accentPatches:patches.length,waterGardens:3};
 }
