@@ -15,7 +15,9 @@ const previewMode=new URLSearchParams(location.search).get('preview')==='1';
 const $=s=>document.querySelector(s),canvas=$('#scene'),reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function fail(message){$('#error-message').textContent=message;$('#error').hidden=false;$('#loading').hidden=true;}
 try{
-  const renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
+  let quality=matchMedia('(pointer: coarse)').matches?'light':'high';
+  try{const saved=localStorage.getItem('changyong-light-festival-quality-v1');if(saved==='high'||saved==='light')quality=saved;}catch{}
+  const renderer=new T.WebGLRenderer({canvas,antialias:false,alpha:false,powerPreference:'high-performance'});
   renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.85;renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.info.autoReset=false;
   const scene=new T.Scene();scene.background=new T.Color(0x091326);scene.fog=new T.FogExp2(0x12213b,.0032);
   const camera=new T.PerspectiveCamera(48,innerWidth/innerHeight,.15,400);
@@ -23,9 +25,8 @@ try{
   const pmrem=new T.PMREMGenerator(renderer),environment=new RoomEnvironment();const env=pmrem.fromScene(environment,.04);scene.environment=env.texture;environment.dispose();pmrem.dispose();
   const target=new T.WebGLRenderTarget(innerWidth,innerHeight,{type:T.HalfFloatType,samples:4});
   const composer=new EffectComposer(renderer,target);composer.addPass(new RenderPass(scene,camera));const bloom=new UnrealBloomPass(new T.Vector2(innerWidth,innerHeight),.3,.55,1.1);composer.addPass(bloom);composer.addPass(new OutputPass());
-  let quality='high';
-  function resize(){const dpr=quality==='high'?Math.min(devicePixelRatio,2):Math.min(devicePixelRatio,.8);renderer.shadowMap.autoUpdate=quality==='high';renderer.shadowMap.needsUpdate=true;renderer.setPixelRatio(dpr);renderer.setSize(innerWidth,innerHeight,false);composer.setPixelRatio(dpr);composer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
-  resize();const world=await createWorld(scene,renderer);scene.environmentIntensity=.6;
+  function resize(){const dpr=quality==='high'?Math.min(devicePixelRatio,2):Math.min(devicePixelRatio,1.25,Math.sqrt(1200000/(innerWidth*innerHeight)));renderer.shadowMap.autoUpdate=quality==='high';renderer.shadowMap.needsUpdate=true;renderer.setPixelRatio(dpr);renderer.setSize(innerWidth,innerHeight,false);composer.setPixelRatio(dpr);composer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
+  resize();const world=await createWorld(scene,renderer,quality);scene.environmentIntensity=.6;
   const poses={carousel:{p:[-7,8.5,33],t:[-25,4,14]},entrance:{p:[7,7,26],t:[0,5,-8]},bridge:{p:[-7,6,6],t:[-14,3,0]},flower:{p:[10,7,3],t:[0,4.7,-8]}};
   const lampStand=world.nodes[world.stations[0].node];poses.lamp={p:[lampStand.x+7,lampStand.y+4.5,lampStand.z+6.7],t:[lampStand.x+.9,2.4,lampStand.z-.5]};
   const bridgeStand=world.nodes[world.stations[1].node];poses.bridgeLamp={p:[bridgeStand.x+10,bridgeStand.y+8,bridgeStand.z+2],t:[bridgeStand.x-1,bridgeStand.y+1.3,bridgeStand.z]};
@@ -45,7 +46,9 @@ try{
   for(const b of document.querySelectorAll('button[data-stage]'))b.addEventListener('click',()=>setStage(+b.dataset.stage));
   for(const b of document.querySelectorAll('[data-view]'))b.addEventListener('click',()=>goView(b.dataset.view));
   $('#replay').addEventListener('click',()=>{if(!previewMode)return;goView('entrance');setStage(0,{instant:true});replayStart=performance.now();$('#replay').disabled=true;$('#replay').textContent='도시가 깨어나고 있어요';});
-  $('#quality').addEventListener('click',()=>{quality=quality==='high'?'light':'high';$('#quality').textContent=quality==='high'?'최고 화질':'가벼운 화질';$('#quality').setAttribute('aria-label',quality==='high'?'현재 최고 화질. 누르면 가벼운 화질로 변경':'현재 가벼운 화질. 누르면 최고 화질로 변경');world.setQuality(quality);resize();});
+  function qualityLabel(){$('#quality').textContent=quality==='high'?'최고 화질':'가벼운 화질';$('#quality').setAttribute('aria-label',quality==='high'?'현재 최고 화질. 누르면 가벼운 화질로 변경':'현재 가벼운 화질. 누르면 최고 화질로 변경');}
+  qualityLabel();
+  $('#quality').addEventListener('click',()=>{quality=quality==='high'?'light':'high';qualityLabel();try{localStorage.setItem('changyong-light-festival-quality-v1',quality);}catch{}world.setQuality(quality);resize();});
   function clean(on){document.body.classList.toggle('clean',on);$('#restore').hidden=!on;}
   $('#clean').onclick=()=>clean(true);$('#restore').onclick=()=>clean(false);
   addEventListener('keydown',e=>{if(e.key==='Escape')clean(false);if(previewMode&&e.target===canvas&&['1','2','3'].includes(e.key))setStage(+e.key-1);});
@@ -113,11 +116,11 @@ try{
       const dx=camera.position.x-world.hero.position.x,dz=camera.position.z-world.hero.position.z,distance=Math.hypot(dx,dz),angle=Math.atan2(dx,dz),safe=safeFollowAngle(world.hero.position.x,world.hero.position.z,angle,distance);
       if(Math.abs(safe-angle)>.00001){camera.position.x=world.hero.position.x+Math.sin(safe)*distance;camera.position.z=world.hero.position.z+Math.cos(safe)*distance;camera.lookAt(controls.target);}
     }
-    game?.update(gameDt,moving||walking.length>0,{looking:now<lookUntil});world.update(elapsed,dt,stage,reduceMotion);updateGuide(dt);if(quality==='light'&&now-lastShadow>=1000/30){renderer.shadowMap.needsUpdate=true;lastShadow=now;}renderer.info.reset();const start=performance.now();composer.render();renderTime+=performance.now()-start;frameCount++;
+    game?.update(gameDt,moving||walking.length>0,{looking:now<lookUntil});world.update(elapsed,dt,stage,reduceMotion);updateGuide(dt);if(quality==='light'&&now-lastShadow>=1000/12){renderer.shadowMap.needsUpdate=true;lastShadow=now;}renderer.info.reset();const start=performance.now();composer.render();renderTime+=performance.now()-start;frameCount++;
   }
   const initial=new URLSearchParams(location.search).get('stage');setStage(previewMode?(initial!==null&&/^[012]$/.test(initial)?+initial:2):0,{instant:true});
   if(!previewMode){document.body.classList.add('playing');$('#mission').hidden=false;$('#restart-game').hidden=false;$('#explore-controls').hidden=false;game=createGame(world,{travel,resume,goView,project,reduceMotion});}
-  window.__festival={ready:true,setStage:(s)=>setStage(s,{instant:true}),goView:(s)=>goView(s,true),getState:()=>({game:game?.state,carousel:world.carousel.state,festival:world.festival.state,stage,current:world.current,viewpoint,camera:camera.position.toArray(),cameraTarget:controls.target.toArray(),guideVisible:guide.visible,guideRecomputes,guidePoints:guide.children.filter(p=>p.visible).map(p=>p.position.toArray()),curiosities:world.curiosities.state,quality,hero:world.hero.position.toArray(),heroGroundOffset:new T.Box3().setFromObject(world.hero,true).min.y-world.hero.position.y,walking:walking.length,walkDistance,frames:frameCount,averageRenderMs:renderTime/Math.max(1,frameCount),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,gardens:world.gardenStats,character:world.hero.userData.asset,gait:world.hero.userData.gait,hip:world.hero.getObjectByName('mixamorigHips')?.getWorldPosition(new T.Vector3()).toArray(),contextLost,reflection:!!world.water.material.uniforms.mirrorSampler.value}),projectNode:i=>{const p=world.nodes[i].clone().project(camera);return {x:(p.x+1)/2*innerWidth,y:(1-p.y)/2*innerHeight};},stations:world.stations.map(s=>({name:s.name,node:s.node})),edges:world.edges,walkRadii:world.nodes.map(p=>p.walkRadius),plazas:world.plazas,obstacles:world.obstacles,nodes:world.nodes.map(p=>p.toArray())};
-  world.festival.prepare(renderer,camera);requestAnimationFrame(frame);$('#loading').classList.add('loaded');setTimeout(()=>$('#loading').hidden=true,850);
+  window.__festival={ready:false,setStage:(s)=>setStage(s,{instant:true}),goView:(s)=>goView(s,true),getState:()=>({game:game?.state,carousel:world.carousel.state,festival:world.festival.state,stage,current:world.current,viewpoint,camera:camera.position.toArray(),cameraTarget:controls.target.toArray(),guideVisible:guide.visible,guideRecomputes,guidePoints:guide.children.filter(p=>p.visible).map(p=>p.position.toArray()),curiosities:world.curiosities.state,quality,hero:world.hero.position.toArray(),heroGroundOffset:new T.Box3().setFromObject(world.hero,true).min.y-world.hero.position.y,walking:walking.length,walkDistance,frames:frameCount,averageRenderMs:renderTime/Math.max(1,frameCount),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,gardens:world.gardenStats,character:world.hero.userData.asset,gait:world.hero.userData.gait,hip:world.hero.getObjectByName('mixamorigHips')?.getWorldPosition(new T.Vector3()).toArray(),contextLost,reflection:!!world.water.material.uniforms.mirrorSampler.value}),projectNode:i=>{const p=world.nodes[i].clone().project(camera);return {x:(p.x+1)/2*innerWidth,y:(1-p.y)/2*innerHeight};},stations:world.stations.map(s=>({name:s.name,node:s.node})),edges:world.edges,walkRadii:world.nodes.map(p=>p.walkRadius),plazas:world.plazas,obstacles:world.obstacles,nodes:world.nodes.map(p=>p.toArray())};
+  await world.festival.prepare(renderer,camera);composer.render();window.__festival.ready=true;requestAnimationFrame(frame);last=performance.now();$('#loading').classList.add('loaded');setTimeout(()=>$('#loading').hidden=true,850);
 }catch(error){console.error(error);fail('3D 화면을 준비하지 못했어요. 최신 Chrome 또는 Edge에서 로컬 실행 주소를 다시 열어 주세요.');}
 

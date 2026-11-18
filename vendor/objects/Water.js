@@ -212,6 +212,7 @@ class Water extends Mesh {
 		material.uniforms[ 'eye' ].value = eye;
 
 		scope.material = material;
+		scope.getRenderTarget = () => renderTarget;
 
 		scope.onBeforeRender = function ( renderer, scene, camera ) {
 

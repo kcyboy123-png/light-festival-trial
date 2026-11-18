@@ -15,7 +15,7 @@ export function createCarousel(scene){
   function ring(r,y,m,parent=fixed,width=.04){const o=mesh(new T.TorusGeometry(r,width,8,96),m,[0,y,0],parent);o.rotation.x=Math.PI/2;return o;}
   function bake(group){
     group.updateMatrixWorld(true);const inverse=group.matrixWorld.clone().invert(),batches=new Map();
-    group.traverse(o=>{if(!o.isMesh)return;const g=o.geometry.clone().applyMatrix4(inverse.clone().multiply(o.matrixWorld));if(!batches.has(o.material))batches.set(o.material,[]);batches.get(o.material).push(g.index?g.toNonIndexed():g);});
+    group.traverse(o=>{if(!o.isMesh)return;const g=o.geometry.clone().applyMatrix4(inverse.clone().multiply(o.matrixWorld));if(!g.index)g.setIndex(Array.from({length:g.attributes.position.count},(_,i)=>i));if(!batches.has(o.material))batches.set(o.material,[]);batches.get(o.material).push(g);});
     group.clear();for(const [m,geos]of batches){const g=mergeGeometries(geos);mesh(g,m,[0,0,0],group);geos.forEach(g=>g.dispose());}
   }
   // Porcelain horses have volume on both sides, articulated-looking legs and carved tack.

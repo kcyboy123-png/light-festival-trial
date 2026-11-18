@@ -42,7 +42,7 @@ export function createFestivalReveal(scene){
 
   let progress=1;
   return {
-    prepare(renderer,camera){const visible=group.visible;group.visible=true;renderer.compile(scene,camera);group.visible=visible;},
+    async prepare(renderer,camera){const visible=group.visible;group.visible=true;try{await renderer.compileAsync(scene,camera);}finally{group.visible=visible;}},
     set(t,position,running,reduced){progress=t;const phase=festivalTiming(t);origin.value.copy(position);origin.value.y=1.25;time.value=t*FESTIVAL_SECONDS;radius.value=phase.radius;charge.value=phase.charge;finale.value=phase.finale;fade.value=phase.fade;active.value=running&&!reduced?1:0;group.visible=active.value===1;},
     update(dpr){pixelRatio.value=dpr;},
     get energy(){return active.value*(charge.value+finale.value*.6);},

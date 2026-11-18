@@ -1,8 +1,8 @@
 import * as T from 'three';
-import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {loadModel} from './load-model.js';
 
 export async function createStarfox(renderer) {
-  const gltf=await new GLTFLoader().loadAsync('./assets/starfox.glb');
+  const gltf=await loadModel('./assets/starfox.glb');
   const hero=new T.Group(),model=gltf.scene;hero.name='Starfox';hero.add(model);
   model.updateMatrixWorld(true);
   const box=new T.Box3().setFromObject(model),size=box.getSize(new T.Vector3());

@@ -30,7 +30,7 @@ export function createGardens(scene, {root, mesh, tube, cyl, ring, arch, mat, gl
   const beadG=new T.SphereGeometry(.045,7,5),budG=new T.SphereGeometry(1,8,6);
   const batches=new Map(),dummy=new T.Object3D();
   function instance(g,m,p,r=[0,0,0],s=[1,1,1]) {
-    const key=g.uuid+m.uuid;if(!batches.has(key))batches.set(key,{g,m,transforms:[]});
+    const key=`${g.uuid}:${m.uuid}:${Math.floor(p[0]/36)}:${Math.floor(p[2]/36)}`;if(!batches.has(key))batches.set(key,{g,m,transforms:[]});
     dummy.position.set(...p);dummy.rotation.set(...r);dummy.scale.set(...s);dummy.updateMatrix();
     batches.get(key).transforms.push(dummy.matrix.clone());
   }

@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {loadModel} from './load-model.js';
 import {barkTex,foliageDetailTex,surfaceData} from './garden-textures.js';
 
 // Forest-studio meshes and piano-forest material/normal treatment, copied locally.
@@ -14,9 +14,10 @@ export async function plantBorders(scene, lightMats) {
     placements.hydrangea.push([side*(13.5+i*.55),.95,-18+Math.sin(i*.6)*.8,1.1+(i%3)*.12,i]);
     placements.liriope.push([side*(13.2+i*.55),.95,-16.8+Math.sin(i*.6)*.55,1.3,i]);
   }
-  const loader=new GLTFLoader(),stats={plants:0,parts:0,models:[]};
-  for(const [kind,locations] of Object.entries(placements)){
-    const gltf=await loader.loadAsync(`./assets/garden/${kind}.glb`);gltf.scene.updateMatrixWorld(true);
+  const stats={plants:0,parts:0,models:[]},kinds=Object.keys(placements);
+  const models=await Promise.all(kinds.map(kind=>loadModel(`./assets/garden/${kind}.glb`)));
+  for(const [index,kind] of kinds.entries()){
+    const locations=placements[kind],gltf=models[index];gltf.scene.updateMatrixWorld(true);
     gltf.scene.traverse(o=>{
       if(!o.isMesh)return;
       const name=o.material.name,g=o.geometry.clone().applyMatrix4(o.matrixWorld);
