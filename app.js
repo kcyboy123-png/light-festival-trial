@@ -5,10 +5,10 @@ import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
-import {createWorld} from './world.js';
+import {createWorld} from './world.js?v=trial-20261118-6';
 import {nearestNode,route,walkStep,canTraverse} from './navigation.js';
-import {createExplorationInput} from './exploration-input.js';
-import {createGame} from './game.js';
+import {createExplorationInput} from './exploration-input.js?v=trial-20261118-6';
+import {createGame} from './game.js?v=trial-20261118-6';
 import {safeFollowAngle} from './camera-follow.js';
 
 const previewMode=new URLSearchParams(location.search).get('preview')==='1';
@@ -30,22 +30,19 @@ try{
   const poses={carousel:{p:[-7,8.5,33],t:[-25,4,14]},entrance:{p:[7,7,26],t:[0,5,-8]},bridge:{p:[-7,6,6],t:[-14,3,0]},flower:{p:[10,7,3],t:[0,4.7,-8]}};
   const lampStand=world.nodes[world.stations[0].node];poses.lamp={p:[lampStand.x+7,lampStand.y+4.5,lampStand.z+6.7],t:[lampStand.x+.9,2.4,lampStand.z-.5]};
   const bridgeStand=world.nodes[world.stations[1].node];poses.bridgeLamp={p:[bridgeStand.x+10,bridgeStand.y+8,bridgeStand.z+2],t:[bridgeStand.x-1,bridgeStand.y+1.3,bridgeStand.z]};
-  const gardenStand=world.nodes[world.bridgeClue.node];poses.gardenClue={p:[gardenStand.x+7,gardenStand.y+4.5,gardenStand.z+6.7],t:[gardenStand.x+.9,gardenStand.y+1.2,gardenStand.z-.5]};
   poses.bridgeReveal={p:[-10,9,6],t:[-11,3,-5]};
   const fountainStand=world.nodes[world.stations[2].node];poses.fountainLamp={p:[fountainStand.x+2,fountainStand.y+5,fountainStand.z+8],t:[fountainStand.x-.6,fountainStand.y+1.2,fountainStand.z-.5]};
-  const fountainClueStand=world.nodes[world.fountainClue.node];poses.fountainClue={p:[fountainClueStand.x+5,fountainClueStand.y+4.5,fountainClueStand.z+6],t:[fountainClueStand.x,fountainClueStand.y+1,fountainClueStand.z]};
   poses.fountainReveal={p:[5,7,12],t:[0,5,-8]};
   let viewpoint='entrance',flight=null;const followTarget=new T.Vector3(),followLead=new T.Vector3(),followOffset=new T.Vector3();
   const walkHeading=new T.Vector3(-3.8,0,-7).normalize(),inputForward=new T.Vector3(),lastInput=new T.Vector2();let movingTime=0;
   const followHeight=()=>3+Math.min(2,Math.max(0,((world.hero.userData.baseY||1.2)-1.2)*2));
   function goView(name,instant=false){const wasFollowing=viewpoint==='fox';viewpoint=name;world.cameraFollowing.value=name==='fox'?1:0;if(!wasFollowing||name!=='fox')lastInput.set(0,0);followLead.set(0,0,0);const pos=world.hero.position;const pose=name==='fox'?{p:[pos.x-walkHeading.x*8,pos.y+1.4+followHeight(),pos.z-walkHeading.z*8],t:[pos.x,pos.y+1.4,pos.z]}:poses[name],p=new T.Vector3(...pose.p),t=new T.Vector3(...pose.t);if(innerHeight>innerWidth)p.sub(t).multiplyScalar(name==='fox'?1.12:1.35).add(t);if(instant||reduceMotion){flight=null;camera.position.copy(p);controls.target.copy(t);controls.update();}else flight={from:camera.position.clone(),target:controls.target.clone(),p,t,start:performance.now()};for(const b of document.querySelectorAll('[data-view]'))b.setAttribute('aria-pressed',String(b.dataset.view===name));}
   goView(previewMode?'entrance':'fox',true);
-  let game=null;let stage=2,replayStart=null,walking=[],activeNode=nearestNode(world.nodes,world.hero.position),walkDistance=0;
+  let game=null;let stage=2,walking=[],activeNode=nearestNode(world.nodes,world.hero.position),walkDistance=0;
   const captions=['길 위에 첫 불빛을 밝혀 보세요.','다리가 깨어났어요. 다음은 중앙 광장이에요.','도시 전체에 빛이 돌아왔어요.'];
-  function setStage(value,{instant=false,fromReplay=false}={}){stage=Math.max(0,Math.min(2,value));if(!fromReplay){replayStart=null;$('#replay').disabled=false;$('#replay').innerHTML='<span aria-hidden="true">✧</span> 빛이 켜지는 순간';}for(const b of document.querySelectorAll('button[data-stage]'))b.setAttribute('aria-pressed',String(+b.dataset.stage===stage));$('#status').textContent=captions[stage];$('#chapter').textContent=['달빛만 남은 광장','처음 돌아온 따뜻한 빛','내가 깨운 빛의 도시'][stage];document.body.dataset.stage=String(stage);if(instant)world.snap(stage);}
+  function setStage(value,{instant=false}={}){stage=Math.max(0,Math.min(2,value));for(const b of document.querySelectorAll('button[data-stage]'))b.setAttribute('aria-pressed',String(+b.dataset.stage===stage));$('#status').textContent=captions[stage];$('#chapter').textContent=['달빛만 남은 광장','처음 돌아온 따뜻한 빛','내가 깨운 빛의 도시'][stage];document.body.dataset.stage=String(stage);if(instant)world.snap(stage);}
   for(const b of document.querySelectorAll('button[data-stage]'))b.addEventListener('click',()=>setStage(+b.dataset.stage));
   for(const b of document.querySelectorAll('[data-view]'))b.addEventListener('click',()=>goView(b.dataset.view));
-  $('#replay').addEventListener('click',()=>{if(!previewMode)return;goView('entrance');setStage(0,{instant:true});replayStart=performance.now();$('#replay').disabled=true;$('#replay').textContent='도시가 깨어나고 있어요';});
   function qualityLabel(){$('#quality').textContent=quality==='high'?'최고 화질':'가벼운 화질';$('#quality').setAttribute('aria-label',quality==='high'?'현재 최고 화질. 누르면 가벼운 화질로 변경':'현재 가벼운 화질. 누르면 최고 화질로 변경');}
   qualityLabel();
   $('#quality').addEventListener('click',()=>{quality=quality==='high'?'light':'high';qualityLabel();try{localStorage.setItem('changyong-light-festival-quality-v1',quality);}catch{}world.setQuality(quality);resize();});
@@ -62,14 +59,14 @@ try{
   canvas.addEventListener('lostpointercapture',e=>pointers.delete(e.pointerId));
   canvas.addEventListener('pointerup',e=>pointers.delete(e.pointerId));
   // Finish the click before opening a dialog, so the same touch cannot press its new button.
-  canvas.addEventListener('click',e=>{if(game?.blocked){down=null;return;}if(!down||down.multi||down.moved||Math.hypot(e.clientX-down.x,e.clientY-down.y)>6||performance.now()-down.time>700){down=null;return;}down=null;pointer.set(e.clientX/innerWidth*2-1,1-e.clientY/innerHeight*2);raycaster.setFromCamera(pointer,camera);if(game?.tapClue(raycaster))return;const hit=raycaster.intersectObjects(world.walkMeshes,false)[0];if(!hit||world.floorBlocked(raycaster,hit)){game?.walkFeedback(true);return;}game?.walkFeedback(false);const next=nearestNode(world.nodes,hit.point);travel(next);$('#hint').textContent='빛을 따라 걸어가고 있어요';});
+  canvas.addEventListener('click',e=>{if(game?.blocked){down=null;return;}if(!down||down.multi||down.moved||Math.hypot(e.clientX-down.x,e.clientY-down.y)>6||performance.now()-down.time>700){down=null;return;}down=null;pointer.set(e.clientX/innerWidth*2-1,1-e.clientY/innerHeight*2);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(world.walkMeshes,false)[0];if(!hit||world.floorBlocked(raycaster,hit)){game?.walkFeedback(true);return;}game?.walkFeedback(false);const next=nearestNode(world.nodes,hit.point);travel(next);$('#hint').textContent='빛을 따라 걸어가고 있어요';});
   function travel(next){if(next===null){walking=[];return;}if(!previewMode&&viewpoint!=='fox')goView('fox');activeNode=nearestNode(world.nodes,world.hero.position);walking=route(world.nodes,world.edges,activeNode,next);if(walking[0]===activeNode&&world.hero.position.distanceTo(world.nodes[activeNode])<.15)walking.shift();}
   function resume(node){walking=[];world.hero.position.copy(world.nodes[node]);world.hero.userData.baseY=world.nodes[node].y;goView('fox',true);}
   const projectPoint=new T.Vector3(),movementRight=new T.Vector3(),walkDelta=new T.Vector3(),walkNext=new T.Vector3();
   function project(position){const p=projectPoint.copy(position).project(camera);return {x:(p.x+1)/2*innerWidth,y:(1-p.y)/2*innerHeight,z:p.z};}
   function turn(x,z,dt){const a=Math.atan2(x,z)-world.hero.rotation.y;world.hero.rotation.y+=Math.atan2(Math.sin(a),Math.cos(a))*Math.min(1,dt*12);}
-  if(navigator.maxTouchPoints>0)$('#explore-controls p').innerHTML='조이스틱을 밀어 걷기<br>가까이서 살펴보기';
-  const movement=createExplorationInput(()=>previewMode||!!game?.blocked,()=>game?.interact(),()=>game?.hint(),()=>goView('fox'),()=>game?.openBook());
+  if(navigator.maxTouchPoints>0)$('#explore-controls p').innerHTML='조이스틱을 밀어 걷기<br>도착하면 회로 고치기';
+  const movement=createExplorationInput(()=>previewMode||!!game?.blocked,()=>game?.interact(),()=>game?.hint(),()=>goView('fox'));
   $('#move-pad').addEventListener('pointerdown',e=>{if(e.button===0&&!previewMode&&!game?.blocked)travel(null);});
   const guide=new T.Group();scene.add(guide);const guideMat=new T.MeshBasicMaterial({color:0xd5f2e8,transparent:true,opacity:.4,depthWrite:false,toneMapped:false});
   const guideDots=Array.from({length:10},()=>new T.Object3D()),guideColor=new T.Color();
@@ -83,7 +80,6 @@ try{
   canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();contextLost=true;fail('3D 화면 연결이 잠시 끊겼어요. 다시 열기를 눌러 주세요.');});
   canvas.addEventListener('webglcontextrestored',()=>location.reload());
   function frame(now){requestAnimationFrame(frame);if(hidden||contextLost)return;const gameDt=Math.min((now-last)/1000,.25),dt=Math.min(gameDt,.05);last=now;elapsed+=dt;
-    if(replayStart!==null){const t=(now-replayStart)/1000;if(t>2&&stage===0)setStage(1,{fromReplay:true});if(t>6&&stage===1)setStage(2,{fromReplay:true});if(t>11){replayStart=null;$('#replay').disabled=false;$('#replay').innerHTML='<span aria-hidden="true">✧</span> 다시 감상하기';}}
     if(flight){if(viewpoint==='fox'){const dx=world.hero.position.x-flight.t.x,dz=world.hero.position.z-flight.t.z;flight.t.x+=dx;flight.t.z+=dz;flight.p.x+=dx;flight.p.z+=dz;}const t=Math.min(1,(now-flight.start)/(viewpoint==='fox'?650:1800)),u=t*t*(3-2*t);camera.position.lerpVectors(flight.from,flight.p,u);controls.target.lerpVectors(flight.target,flight.t,u);if(t===1)flight=null;}
     const input=movement.read(),distanceBefore=walkDistance,previousX=world.hero.position.x,previousZ=world.hero.position.z;let moving=false;
     if(input.x||input.y){
@@ -94,7 +90,7 @@ try{
       const right=movementRight.set(-inputForward.z,0,inputForward.x),delta=right.multiplyScalar(input.x).addScaledVector(inputForward,-input.y).multiplyScalar(dt*3.6);
       let pos=world.hero.position;for(const [x,z]of [[delta.x,delta.z],[delta.x,0],[0,delta.z]]){const candidate=walkStep(world.nodes,world.edges,world.hero.position,x,z,world.plazas);if(canTraverse(world.hero.position,candidate,world.onPath)){pos=candidate;break;}}const dx=pos.x-world.hero.position.x,dz=pos.z-world.hero.position.z;
       if(Math.hypot(dx,dz)>.0001){world.hero.position.x=pos.x;world.hero.position.z=pos.z;world.hero.userData.baseY=pos.y;turn(dx,dz,dt);walkDistance+=Math.hypot(dx,dz);moving=true;}
-    }else if(walking.length&&!game?.revealing&&!document.querySelector('dialog[open]')){
+    }else if(walking.length&&!document.querySelector('dialog[open]')){
       const to=world.nodes[walking[0]],delta=walkDelta.copy(to).sub(world.hero.position);delta.y=0;const d=delta.length(),step=Math.min(d,dt*3.6);
       if(d<.08){activeNode=walking.shift();world.hero.userData.baseY=to.y;}else{const next=walkNext.copy(world.hero.position).addScaledVector(delta,step/d);if(!canTraverse(world.hero.position,next,world.onPath)){walking=[];}else{world.hero.position.copy(next);world.hero.userData.baseY=T.MathUtils.damp(world.hero.userData.baseY||1.2,to.y,8,dt);turn(delta.x,delta.z,dt);walkDistance+=step;moving=true;}}
     }
@@ -123,7 +119,7 @@ try{
   }
   const initial=new URLSearchParams(location.search).get('stage');setStage(previewMode?(initial!==null&&/^[012]$/.test(initial)?+initial:2):0,{instant:true});
   if(!previewMode){document.body.classList.add('playing');$('#mission').hidden=false;$('#restart-game').hidden=false;$('#explore-controls').hidden=false;game=createGame(world,{travel,resume,goView,project,reduceMotion});}
-  window.__festival={ready:false,setStage:(s)=>setStage(s,{instant:true}),goView:(s)=>goView(s,true),getState:()=>({game:game?.state,carousel:world.carousel.state,festival:world.festival.state,stage,current:world.current,viewpoint,camera:camera.position.toArray(),cameraTarget:controls.target.toArray(),guideVisible:guide.visible,guideRecomputes,guidePoints:guideDots.filter(p=>p.visible).map(p=>p.position.toArray()),curiosities:world.curiosities.state,quality,hero:world.hero.position.toArray(),heroGroundOffset:new T.Box3().setFromObject(world.hero,true).min.y-world.hero.position.y,walking:walking.length,walkDistance,frames:frameCount,averageRenderMs:renderTime/Math.max(1,frameCount),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,gardens:world.gardenStats,character:world.hero.userData.asset,gait:world.hero.userData.gait,hip:world.hero.getObjectByName('mixamorigHips')?.getWorldPosition(new T.Vector3()).toArray(),contextLost,reflection:!!world.water.material.uniforms.mirrorSampler.value}),projectNode:i=>{const p=world.nodes[i].clone().project(camera);return {x:(p.x+1)/2*innerWidth,y:(1-p.y)/2*innerHeight};},stations:world.stations.map(s=>({name:s.name,node:s.node})),edges:world.edges,walkRadii:world.nodes.map(p=>p.walkRadius),plazas:world.plazas,obstacles:world.obstacles,nodes:world.nodes.map(p=>p.toArray())};
+  window.__festival={ready:false,setStage:(s)=>setStage(s,{instant:true}),goView:(s)=>goView(s,true),getState:()=>({game:game?.state,carousel:world.carousel.state,festival:world.festival.state,stage,current:world.current,viewpoint,camera:camera.position.toArray(),cameraTarget:controls.target.toArray(),guideVisible:guide.visible,guideRecomputes,guidePoints:guideDots.filter(p=>p.visible).map(p=>p.position.toArray()),quality,hero:world.hero.position.toArray(),heroGroundOffset:new T.Box3().setFromObject(world.hero,true).min.y-world.hero.position.y,walking:walking.length,walkDistance,frames:frameCount,averageRenderMs:renderTime/Math.max(1,frameCount),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,gardens:world.gardenStats,character:world.hero.userData.asset,gait:world.hero.userData.gait,hip:world.hero.getObjectByName('mixamorigHips')?.getWorldPosition(new T.Vector3()).toArray(),contextLost,reflection:!!world.water.material.uniforms.mirrorSampler.value}),projectNode:i=>{const p=world.nodes[i].clone().project(camera);return {x:(p.x+1)/2*innerWidth,y:(1-p.y)/2*innerHeight};},stations:world.missionSites.map((s,i)=>({name:String(i+1),node:s.node})),edges:world.edges,walkRadii:world.nodes.map(p=>p.walkRadius),plazas:world.plazas,obstacles:world.obstacles,nodes:world.nodes.map(p=>p.toArray())};
   await world.festival.prepare(renderer,camera);composer.render();window.__festival.ready=true;requestAnimationFrame(frame);last=performance.now();$('#loading').classList.add('loaded');setTimeout(()=>$('#loading').hidden=true,850);
 }catch(error){console.error(error);fail('3D 화면을 준비하지 못했어요. 최신 Chrome 또는 Edge에서 로컬 실행 주소를 다시 열어 주세요.');}
 

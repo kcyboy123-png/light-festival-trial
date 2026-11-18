@@ -6,15 +6,16 @@ export const REVEAL_SECONDS=10;
 
 // World-space masks also cover merged geometry and individual plant instances.
 export function createAwakening(scene, lightMats) {
-  const radii={value:new T.Vector3(-5,-5,-5)},enabled={value:0};
+  const strength={value:new T.Vector3()},radii={value:new T.Vector3(-5,-5,-5)},enabled={value:0};
   const festivalRadius={value:-5},festivalOrigin={value:new T.Vector3(-17.7,1.25,14)},festivalPulse={value:0};
-  const code=`uniform vec3 wakeRadius;uniform float wakeEnabled,wakeMission;varying vec3 wakeWorld;
+  const code=`uniform vec3 wakeRadius,wakeStrength;uniform float wakeEnabled,wakeMission;varying vec3 wakeWorld;
     float wakeLight(vec3 p){
-      if(wakeMission==1.)return 1.-smoothstep(wakeRadius.y-3.,wakeRadius.y,length(p.xz-vec2(-15.,1.)));
-      float c=1.-smoothstep(wakeRadius.z-4.,wakeRadius.z,length(p.xz-vec2(0.,-8.)));
+      if(wakeMission==1.)return (1.-smoothstep(wakeRadius.y-3.,wakeRadius.y,length(p.xz-vec2(-15.,1.))))*wakeStrength.y;
+      float c=(1.-smoothstep(wakeRadius.z-4.,wakeRadius.z,length(p.xz-vec2(0.,-8.))))*wakeStrength.z;
       if(wakeMission==2.||c>=1.)return c;
       float a=1.-smoothstep(wakeRadius.x-3.,wakeRadius.x,length(p.xz-vec2(4.,15.)));
       float b=1.-smoothstep(wakeRadius.y-3.,wakeRadius.y,length(p.xz-vec2(-15.,1.)));
+      a*=wakeStrength.x;b*=wakeStrength.y;
       a*=smoothstep(-11.,-5.,p.x);
       float plaza=smoothstep(8.,11.,length(p.xz-vec2(0.,-8.)));a*=plaza;b*=plaza;
       return max(a,max(b,c));}`;
@@ -28,7 +29,7 @@ export function createAwakening(scene, lightMats) {
   for(const {m,stage,mission=-1} of lightMats){
     const previous=m.onBeforeCompile;
     m.onBeforeCompile=s=>{
-      previous?.(s);s.uniforms.wakeRadius=radii;s.uniforms.wakeEnabled=enabled;s.uniforms.wakeMission={value:mission};
+      previous?.(s);s.uniforms.wakeRadius=radii;s.uniforms.wakeStrength=strength;s.uniforms.wakeEnabled=enabled;s.uniforms.wakeMission={value:mission};
       Object.assign(s.uniforms,{festivalRadius,festivalOrigin,festivalPulse,festivalReserve:{value:stage===2?1:0}});
       s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 wakeWorld;').replace('#include <project_vertex>',`#include <project_vertex>
         vec4 wakeP=vec4(transformed,1.);
@@ -44,7 +45,7 @@ export function createAwakening(scene, lightMats) {
   const positions=[],phases=[];
   for(let i=0;i<900;i++){const a=i*2.399963,r=5+Math.sqrt((i%137)/137)*31;positions.push(Math.cos(a)*r,1.3+(i%7)*.22,-6+Math.sin(a)*r);phases.push((i*.618033)%1);}
   const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.setAttribute('phase',new T.Float32BufferAttribute(phases,1));
-  const material=new T.ShaderMaterial({transparent:true,depthWrite:false,blending:T.AdditiveBlending,uniforms:{wakeRadius:radii,wakeEnabled:enabled,wakeMission:{value:-1},time:{value:0},pixelRatio:{value:1}},vertexShader:code+`
+  const material=new T.ShaderMaterial({transparent:true,depthWrite:false,blending:T.AdditiveBlending,uniforms:{wakeRadius:radii,wakeStrength:strength,wakeEnabled:enabled,wakeMission:{value:-1},time:{value:0},pixelRatio:{value:1}},vertexShader:code+`
     attribute float phase;uniform float time;uniform float pixelRatio;varying float sparkle;
     void main(){vec3 p=position;p.y+=mod(time*.45+phase*5.,5.);p.x+=sin(time*.3+phase*20.)*.35;wakeWorld=p;
       sparkle=wakeLight(position)*(.25+.75*pow(.5+.5*sin(time*2.+phase*50.),3.))*wakeEnabled;
@@ -53,7 +54,7 @@ export function createAwakening(scene, lightMats) {
   const sparks=new T.Points(geometry,material);sparks.visible=false;scene.add(sparks);
   let progress=[0,0,0];
   return {
-    set(values){enabled.value=1;progress=values;sparks.visible=values.some(v=>v>0);values.forEach((v,i)=>radii.value.setComponent(i,v>0?T.MathUtils.lerp(.1,LIGHT_RADII[i],v):-5));},
+    set(values){strength.value.fromArray(values);enabled.value=1;progress=values;sparks.visible=values.some(v=>v>0);values.forEach((v,i)=>radii.value.setComponent(i,v>0?T.MathUtils.lerp(.1,LIGHT_RADII[i],v):-5));},
     setFestival(radius,origin,pulse=0){festivalRadius.value=radius;festivalOrigin.value.copy(origin);festivalPulse.value=pulse;},
     update(time,pixelRatio){material.uniforms.time.value=time;material.uniforms.pixelRatio.value=pixelRatio;lights.forEach((l,i)=>l.intensity=progress[i]*62);},
     get progress(){return progress;},get enabled(){return enabled.value===1;},get radii(){return radii.value.toArray();}

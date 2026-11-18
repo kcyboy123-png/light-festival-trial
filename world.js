@@ -4,11 +4,9 @@ import {Water} from 'three/addons/objects/Water.js';
 import {createStarfox} from './character.js';
 import {createGardens} from './gardens.js';
 import {plantBorders,loadGardenModels} from './planted-borders.js';
-import {createAwakening} from './awakening.js';
+import {createAwakening} from './awakening.js?v=trial-20261118-6';
 import {createCarousel,bakeMeshes} from './carousel-world.js';
 import {createFestivalReveal} from './festival-reveal.js';
-import {createGardenCuriosities} from './garden-curiosities.js';
-import {createFlowerClue} from './flower-clue.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 const V=(x,y,z)=>new T.Vector3(x,y,z), TAU=Math.PI*2;
@@ -150,10 +148,12 @@ export async function createWorld(scene,renderer,quality='high'){
   const contact=mesh(new T.PlaneGeometry(1.5,1.1),new T.ShaderMaterial({transparent:true,depthWrite:false,vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 vUv;void main(){float a=exp(-dot(vUv-.5,vUv-.5)*15.)*.37;gl_FragColor=vec4(.015,.02,.04,a);}'}),[0,1.225,0],scene);contact.rotation.x=-Math.PI/2;contact.castShadow=false;
   const awakening=createAwakening(scene,lightMats);
   const carousel=createCarousel(scene);
-  const firstClue=createFlowerClue(scene,nodes[mainPath.ids[31]]);firstClue.node=mainPath.ids[31];
-  const bridgeClue=createFlowerClue(scene,nodes[bridge.ids[44]],'fountain');bridgeClue.node=bridge.ids[44];
-  const fountainClue=createFlowerClue(scene,nodes[loop[90]],'carousel');fountainClue.node=loop[90];
-  const curiosities=createGardenCuriosities(scene,[nodes[mainPath.ids[16]],nodes[bridge.ids[16]],nodes[loop[48]],nodes[carouselLoop[44]]]);
+  const missionSites=[mainPath.ids[25],mainPath.ids[36],bridge.ids[13],bridge.ids[30],bridge.ids[44],loop[72],loop[40],loop[12],carouselRoute.ids[25],carouselLoop[16]].map(node=>({node,position:nodes[node].clone()}));
+  const missionPads=new T.InstancedMesh(new T.RingGeometry(.48,.56,32),new T.MeshBasicMaterial({color:0xffffff,toneMapped:false}),10),padTransform=new T.Object3D(),padColor=new T.Color();
+  missionPads.name='mission-pads';missionPads.frustumCulled=false;
+  missionSites.forEach((s,i)=>{padTransform.position.copy(s.position);padTransform.position.y+=.04;padTransform.rotation.x=-Math.PI/2;padTransform.updateMatrix();missionPads.setMatrixAt(i,padTransform.matrix);missionPads.setColorAt(i,new T.Color(.08,.14,.16));});scene.add(missionPads);
+  const missionWave=new T.Mesh(new T.RingGeometry(.94,1,64),new T.MeshBasicMaterial({color:0xffdb9a,transparent:true,opacity:0,depthWrite:false,toneMapped:false}));missionWave.rotation.x=-Math.PI/2;missionWave.visible=false;scene.add(missionWave);
+  let padState='';function setMissionLights(levels,active){const key=levels.join(':')+':'+active;if(key===padState)return;padState=key;levels.forEach((v,i)=>{padColor.setRGB(.08+v*1.4,.14+v*.85,.16+v*.32);if(i===active)padColor.setRGB(.45,.85,.74);missionPads.setColorAt(i,padColor);});missionPads.instanceColor.needsUpdate=true;const fresh=levels.findIndex(v=>v>0&&v<1);missionWave.visible=fresh>=0;if(fresh>=0){const v=levels[fresh];missionWave.position.copy(missionSites[fresh].position);missionWave.position.y+=.07;missionWave.scale.setScalar(.8+v*6);missionWave.material.opacity=Math.sin(v*Math.PI)*.65;missionWave.updateMatrix();}}
   const plazas=[{x:0,z:-8,y:1.2,inner:5.15,outer:7.65},{x:-25,z:14,y:1.2,inner:6.6,outer:7.95}];
   const floorRay=new T.Raycaster(),floorOrigin=new T.Vector3(),floorDown=V(0,-1,0),floorHits=[],nearFloor=[];
   const walkBounds=walkMeshes.map(mesh=>{mesh.geometry.computeBoundingBox();return new T.Box3().copy(mesh.geometry.boundingBox).applyMatrix4(mesh.matrixWorld);});
@@ -185,12 +185,11 @@ export async function createWorld(scene,renderer,quality='high'){
     wisp.position.set(hero.position.x+.85,hero.position.y+1.6+(reduceMotion?0:Math.sin(time*1.8)*.12),hero.position.z-.3);halo.position.copy(wisp.position);hero.position.y=(hero.userData.baseY||1.2);
     awakening.update(reduceMotion?0:time,renderer.getPixelRatio());
     if(!game)carousel.setLight(full);carousel.update(time,dt,reduceMotion);
-    if(!game){firstClue.setReveal(first);bridgeClue.setReveal(first);fountainClue.setReveal(full);}
-    curiosities.update(dt,hero.position,reduceMotion);festival.update(renderer.getPixelRatio());
+    festival.update(renderer.getPixelRatio());
   }
   function snap(state){current=state;update(0,1,state,true);}
   const updateScene=update;function updateWithHero(time,dt,state,reduceMotion){updateScene(time,dt,state,reduceMotion);fountainJets.uniforms.light.value=awakening.enabled?awakening.progress[2]:smooth(1.05,1.95,current);fountainJets.uniforms.time.value=reduceMotion?0:time;jetMesh.visible=fountainJets.uniforms.light.value>0;contact.position.set(hero.position.x,(hero.userData.baseY||1.2)+.025,hero.position.z);character.update(dt,moving,reduceMotion);}
   function setQuality(v){lightQuality=v==='light';lastReflection=-Infinity;water.getRenderTarget().setSize(lightQuality?960:1536,lightQuality?960:1536);const size=lightQuality?1024:2048;if(moon.shadow.mapSize.x!==size){moon.shadow.map?.dispose();moon.shadow.map=null;moon.shadow.mapSize.set(size,size);renderer.shadowMap.needsUpdate=true;}}
   setQuality(quality);
-  return {floorBlocked,cameraFollowing,nodes,edges,plazas,obstacles,onPath,curiosities,hero,walkMeshes,water,gardenStats,stations,awakening,carousel,festival,firstClue,bridgeClue,fountainClue,carouselStation,update:updateWithHero,snap,setQuality,setMoving(v){moving=v;},get reflectionFrames(){return reflectionFrames;},get current(){return current;}};
+  return {floorBlocked,cameraFollowing,nodes,edges,plazas,obstacles,onPath,missionSites,setMissionLights,hero,walkMeshes,water,gardenStats,stations,awakening,carousel,festival,carouselStation,update:updateWithHero,snap,setQuality,setMoving(v){moving=v;},get reflectionFrames(){return reflectionFrames;},get current(){return current;}};
 }
