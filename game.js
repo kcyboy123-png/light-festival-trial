@@ -35,6 +35,15 @@ export function createGame(world,{travel,resume,goView,project,reduceMotion}){
   const seekNext=()=>!nearTarget()&&(needsClue()?nearRepaired>=0:nearRead>=0&&!state.carousel.restored);
   function openBook(){if(!reveal&&!modal()&&approaching===null){travel(null);notebook.openBook();}}
   function showClue(i=clueIndex()){travel(null);notebook.open(i);}
+  function tapClue(ray){
+    for(let i=0;i<clues.length;i++){
+      if((i!==clueIndex()&&!isRead(i))||!nearClue(i)||clues[i].state.revealed<1)continue;
+      const hit=ray.intersectObject(clues[i].root,true)[0];
+      if(hit&&!world.floorBlocked(ray,hit)){showClue(i);return true;}
+    }
+    return false;
+  }
+  function walkFeedback(blocked){if(blocked)say('길 바닥을 누르거나 왼쪽 별을 밀어 걸어요.');else if(flavorUntil){flavorUntil=0;render();}}
   function interact(){
     if(reveal||approaching!==null||modal())return;
     travel(null);
@@ -141,5 +150,5 @@ export function createGame(world,{travel,resume,goView,project,reduceMotion}){
     markers.forEach((b,i)=>{if(!searchNear||i!==(needsClue()?clueIndex():state.completed)||reveal||panel.isOpen||series.isOpen||$('#clue-dialog').open||(i===3&&state.carousel.restored)){b.hidden=true;return;}const anchor=needsClue()?clues[clueIndex()].position.clone().add({x:0,y:-.9,z:0}):targets[i].position;const p=project(anchor);b.hidden=p.z< -1||p.z>1||p.x<64||p.x>innerWidth-64||p.y<110||p.y>innerHeight-180;if(!b.hidden){b.style.left=p.x+'px';b.style.top=p.y+'px';}});
   }
   update(0,false);render();
-  return {update,interact,hint,openBook,get blocked(){return modal()||panel.isOpen||series.isOpen||$('#clue-dialog').open||$('#restart-dialog').open||!!reveal||approaching!==null;},get state(){return {exploration:{node:searchNode,near:searchNear,level:searchLevel,nearRead,nearFlower,nearLandmark,learnedMove,checkpoint:checkpointIndex(state)},completed:state.completed,firstLamp:state.firstLamp,bridgeLamp:state.bridgeLamp,fountainLamp:state.fountainLamp,nearFirst,nearBridge,nearFountain,clue:world.firstClue.state,bridgeClue:world.bridgeClue.state,fountainClue:world.fountainClue.state,clueOpen:$('#clue-dialog').open,approaching,revealing:!!reveal,progress:world.awakening.progress,radii:world.awakening.radii,circuitOpen:panel.isOpen,practiceIndex,seriesOpen:series.isOpen,carousel:state.carousel,drafts:state.drafts,storageOK,saveBlocked};}};
+  return {update,interact,hint,openBook,tapClue,walkFeedback,get blocked(){return modal()||panel.isOpen||series.isOpen||$('#clue-dialog').open||$('#restart-dialog').open||!!reveal||approaching!==null;},get state(){return {exploration:{node:searchNode,near:searchNear,level:searchLevel,nearRead,nearFlower,nearLandmark,learnedMove,checkpoint:checkpointIndex(state)},completed:state.completed,firstLamp:state.firstLamp,bridgeLamp:state.bridgeLamp,fountainLamp:state.fountainLamp,nearFirst,nearBridge,nearFountain,clue:world.firstClue.state,bridgeClue:world.bridgeClue.state,fountainClue:world.fountainClue.state,clueOpen:$('#clue-dialog').open,approaching,revealing:!!reveal,progress:world.awakening.progress,radii:world.awakening.radii,circuitOpen:panel.isOpen,practiceIndex,seriesOpen:series.isOpen,carousel:state.carousel,drafts:state.drafts,storageOK,saveBlocked};}};
 }
