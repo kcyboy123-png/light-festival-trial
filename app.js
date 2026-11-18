@@ -5,13 +5,13 @@ import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
-import {createWorld} from './world.js?v=trial-20261119-3';
+import {createWorld} from './world.js?v=trial-20261119-4';
 import {nearestNode,route,walkStep,canTraverse} from './navigation.js';
 import {createExplorationInput} from './exploration-input.js';
-import {createGame} from './game.js';
+import {createGame} from './game.js?v=trial-20261119-4';
 import {safeFollowAngle} from './camera-follow.js';
 import {initialQuality} from './quality-policy.js';
-import {createArrival} from './arrival.js?v=trial-20261119-3';
+import {createArrival} from './arrival.js?v=trial-20261119-4';
 
 const previewMode=new URLSearchParams(location.search).get('preview')==='1';
 const $=s=>document.querySelector(s),canvas=$('#scene'),reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -37,6 +37,7 @@ try{
   poses.fountainReveal={p:[5,7,12],t:[0,5,-8]};
   let viewpoint='entrance',flight=null;const followTarget=new T.Vector3(),followLead=new T.Vector3(),followOffset=new T.Vector3();
   const walkHeading=new T.Vector3(-3.8,0,-7).normalize(),inputForward=new T.Vector3(),lastInput=new T.Vector2();let movingTime=0;
+  world.hero.rotation.y=Math.atan2(walkHeading.x,walkHeading.z);
   const followHeight=()=>3+Math.min(2,Math.max(0,((world.hero.userData.baseY||1.2)-1.2)*2));
   function goView(name,instant=false){const wasFollowing=viewpoint==='fox';viewpoint=name;world.cameraFollowing.value=name==='fox'?1:0;if(!wasFollowing||name!=='fox')lastInput.set(0,0);followLead.set(0,0,0);const pos=world.hero.position;const pose=name==='fox'?{p:[pos.x-walkHeading.x*8,pos.y+1.4+followHeight(),pos.z-walkHeading.z*8],t:[pos.x,pos.y+1.4,pos.z]}:poses[name],p=new T.Vector3(...pose.p),t=new T.Vector3(...pose.t);if(innerHeight>innerWidth)p.sub(t).multiplyScalar(name==='fox'?1.12:1.35).add(t);if(instant||reduceMotion){flight=null;camera.position.copy(p);controls.target.copy(t);controls.update();}else flight={from:camera.position.clone(),target:controls.target.clone(),p,t,start:performance.now()};for(const b of document.querySelectorAll('[data-view]'))b.setAttribute('aria-pressed',String(b.dataset.view===name));}
   goView(previewMode?'entrance':'fox',true);
@@ -63,7 +64,7 @@ try{
   // Finish the click before opening a dialog, so the same touch cannot press its new button.
   canvas.addEventListener('click',e=>{if(game?.blocked){down=null;return;}if(!down||down.multi||down.moved||Math.hypot(e.clientX-down.x,e.clientY-down.y)>6||performance.now()-down.time>700){down=null;return;}down=null;pointer.set(e.clientX/innerWidth*2-1,1-e.clientY/innerHeight*2);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(world.walkMeshes,false)[0];if(!hit||world.floorBlocked(raycaster,hit)){game?.walkFeedback(true);return;}game?.walkFeedback(false);const next=nearestNode(world.nodes,hit.point);travel(next);$('#hint').textContent='빛을 따라 걸어가고 있어요';});
   function travel(next){if(next===null){walking=[];return;}if(!previewMode&&viewpoint!=='fox')goView('fox');activeNode=nearestNode(world.nodes,world.hero.position);walking=route(world.nodes,world.edges,activeNode,next);if(walking[0]===activeNode&&world.hero.position.distanceTo(world.nodes[activeNode])<.15)walking.shift();}
-  function resume(node){walking=[];world.hero.position.copy(world.nodes[node]);world.hero.userData.baseY=world.nodes[node].y;goView('fox',true);}
+  function resume(node){walking=[];world.hero.position.copy(world.nodes[node]);world.hero.userData.baseY=world.nodes[node].y;world.hero.rotation.y=Math.atan2(walkHeading.x,walkHeading.z);goView('fox',true);}
   const projectPoint=new T.Vector3(),movementRight=new T.Vector3(),walkDelta=new T.Vector3(),walkNext=new T.Vector3();
   function project(position){const p=projectPoint.copy(position).project(camera);return {x:(p.x+1)/2*innerWidth,y:(1-p.y)/2*innerHeight,z:p.z};}
   function turn(x,z,dt){const a=Math.atan2(x,z)-world.hero.rotation.y;world.hero.rotation.y+=Math.atan2(Math.sin(a),Math.cos(a))*Math.min(1,dt*12);}
@@ -128,7 +129,7 @@ try{
   function drawFrame(now){if(quality==='light'&&now-lastShadow>=1000/12){renderer.shadowMap.needsUpdate=true;lastShadow=now;}scene.updateMatrixWorld();scene.matrixWorldAutoUpdate=false;renderer.info.reset();const start=performance.now();composer.render();renderTime+=performance.now()-start;frameCount++;}
   const initial=new URLSearchParams(location.search).get('stage');setStage(previewMode?(initial!==null&&/^[012]$/.test(initial)?+initial:2):0,{instant:true});
   if(!previewMode){document.body.classList.add('playing');$('#mission').hidden=false;$('#restart-game').hidden=false;$('#explore-controls').hidden=false;game=createGame(world,{travel,resume,goView,project,reduceMotion});}
-  window.__festival={ready:false,setStage:(s)=>setStage(s,{instant:true}),goView:(s)=>goView(s,true),getState:()=>({arrival:arrival?{elapsed:arrival.elapsed}:null,game:game?.state,carousel:world.carousel.state,festival:world.festival.state,stage,current:world.current,viewpoint,camera:camera.position.toArray(),cameraTarget:controls.target.toArray(),guideVisible:guide.visible,guideRecomputes,guidePoints:guideDots.filter(p=>p.visible).map(p=>p.position.toArray()),quality,hero:world.hero.position.toArray(),heroGroundOffset:new T.Box3().setFromObject(world.hero,true).min.y-world.hero.position.y,walking:walking.length,walkDistance,frames:frameCount,averageRenderMs:renderTime/Math.max(1,frameCount),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,gardens:world.gardenStats,character:world.hero.userData.asset,gait:world.hero.userData.gait,hip:world.hero.getObjectByName('mixamorigHips')?.getWorldPosition(new T.Vector3()).toArray(),contextLost,reflection:!!world.water.material.uniforms.mirrorSampler.value}),projectNode:i=>{const p=world.nodes[i].clone().project(camera);return {x:(p.x+1)/2*innerWidth,y:(1-p.y)/2*innerHeight};},stations:world.missionSites.map((s,i)=>({name:String(i+1),node:s.node})),edges:world.edges,walkRadii:world.nodes.map(p=>p.walkRadius),plazas:world.plazas,obstacles:world.obstacles,nodes:world.nodes.map(p=>p.toArray())};
+  window.__festival={ready:false,setStage:(s)=>setStage(s,{instant:true}),goView:(s)=>goView(s,true),getState:()=>({arrival:arrival?{elapsed:arrival.elapsed}:null,game:game?.state,carousel:world.carousel.state,festival:world.festival.state,stage,current:world.current,viewpoint,camera:camera.position.toArray(),cameraTarget:controls.target.toArray(),guideVisible:guide.visible,guideRecomputes,guidePoints:guideDots.filter(p=>p.visible).map(p=>p.position.toArray()),quality,hero:world.hero.position.toArray(),heroHeading:world.hero.rotation.y,heroGroundOffset:new T.Box3().setFromObject(world.hero,true).min.y-world.hero.position.y,walking:walking.length,walkDistance,frames:frameCount,averageRenderMs:renderTime/Math.max(1,frameCount),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,gardens:world.gardenStats,character:world.hero.userData.asset,gait:world.hero.userData.gait,hip:world.hero.getObjectByName('mixamorigHips')?.getWorldPosition(new T.Vector3()).toArray(),contextLost,reflection:!!world.water.material.uniforms.mirrorSampler.value}),projectNode:i=>{const p=world.nodes[i].clone().project(camera);return {x:(p.x+1)/2*innerWidth,y:(1-p.y)/2*innerHeight};},stations:world.missionSites.map((s,i)=>({name:String(i+1),node:s.node})),edges:world.edges,walkRadii:world.nodes.map(p=>p.walkRadius),plazas:world.plazas,obstacles:world.obstacles,nodes:world.nodes.map(p=>p.toArray())};
   await world.festival.prepare(renderer,camera);if(!previewMode&&!reduceMotion)arrival=createArrival(scene,renderer,camera,controls,world.hero,()=>{arrival=null;goView('fox',true);updateGuide(0);});else updateGuide(0);composer.render();window.__festival.ready=true;requestAnimationFrame(frame);last=performance.now();$('#loading').classList.add('loaded');setTimeout(()=>$('#loading').hidden=true,850);
 }catch(error){console.error(error);fail('3D 화면을 준비하지 못했어요. 최신 Chrome 또는 Edge에서 로컬 실행 주소를 다시 열어 주세요.');}
 

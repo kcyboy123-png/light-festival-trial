@@ -7,7 +7,8 @@ export function createArrival(scene,renderer,camera,controls,hero,onFinish){
   const end=camera.position.clone(),endLook=controls.target.clone(),h=hero.position.clone();
   const landingOffset=end.clone().sub(endLook),initialScale=camera.aspect<1?1.12:1;
   const landing=()=>end.copy(endLook).addScaledVector(landingOffset,(camera.aspect<1?1.12:1)/initialScale);
-  const portrait=new T.Vector3(h.x+.55,h.y+2.05,h.z+3.5),face=new T.Vector3(h.x,h.y+1.9,h.z);
+  const rear=landingOffset.clone();rear.y=0;rear.normalize();
+  const portrait=h.clone().addScaledVector(rear,4.8).add(new T.Vector3(0,2.6,0)),face=h.clone().addScaledVector(rear,-2.4).add(new T.Vector3(0,1.7,0));
   const curve=new T.CatmullRomCurve3([new T.Vector3(16,17,32),new T.Vector3(5,11,25),new T.Vector3(h.x+1.5,h.y+5,h.z+8),portrait]);
   const wideLook=new T.Vector3(-5,4,-4),look=new T.Vector3();let elapsed=0,done=false;
   const exposure=renderer.toneMappingExposure,points=new Float32Array(96*3);
@@ -24,7 +25,7 @@ export function createArrival(scene,renderer,camera,controls,hero,onFinish){
     if(u<.62){const t=ease(u/.62);camera.position.copy(curve.getPointAt(t));look.lerpVectors(wideLook,face,ease(t/.8));}
     else{const t=ease((u-.62)/.38);camera.position.lerpVectors(portrait,end,t);look.lerpVectors(face,endLook,t);}
     camera.lookAt(look);controls.target.copy(look);overlay.style.setProperty('--arrival-fade',String(1-ease((u-.76)/.24)));
-    caption.textContent=u<.45?'달빛 아래 잠든 도시':u<.7?'작은 별여우와 함께':'이제, 우리의 손으로 밝혀요';
+    caption.textContent=u<.45?'달빛 아래 잠든 도시':u<.7?'별여우와 함께, 빛의 도시로':'이제, 우리의 손으로 밝혀요';
     if(u===1)finish();
   }
   update(0);return {update,finish,get elapsed(){return elapsed;}};

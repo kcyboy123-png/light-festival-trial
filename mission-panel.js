@@ -1,6 +1,6 @@
 import {MISSIONS,freshDraft,checkMission,simulate,shortWireIndices} from './mission-model.js?v=trial-20261119-1';
 import {bulbArt} from './circuit-art.js';
-import {BRIEFS,nextHint,diagnosis,experiments} from './mission-guide.js?v=trial-20261119-1';
+import {BRIEFS,nextHint,diagnosis,experiments,observationText} from './mission-guide.js?v=trial-20261119-4';
 
 const copy=d=>JSON.parse(JSON.stringify(d));
 export function createMissionPanel({onChange,onComplete,onClose}){
@@ -15,8 +15,8 @@ export function createMissionPanel({onChange,onComplete,onClose}){
   function renderParts(){
     const lamps=Array.from({length:m.bulbs},(_,i)=>{const id=String.fromCharCode(97+i),name=m.bulbs===1?'전구':'전구 '+id.toUpperCase();return `<section class="work-part lamp-part lamp-${i}" data-lamp="${i}"><h3>${name}</h3><svg class="work-bulb" viewBox="0 0 260 220" aria-hidden="true">${bulbArt('ten-'+index+'-'+id)}</svg>${ends(id+'1',id+'2',name)}${m.bulbs>1?'<button class="remove-bulb" data-remove="'+id+'">전구 '+id.toUpperCase()+' 빼 보기</button>':''}</section>`;}).join('');
     const switches=Array.from({length:m.switches},(_,i)=>{const id=i?'t':'s',name=m.switches===1?'스위치':'스위치 '+(i?'B':'A');return `<section class="work-part switch-part switch-${i}"><h3>${name}</h3><button class="work-switch" data-switch="${i}" aria-label="${name} ${draft.switches[i]?'열기':'닫기'}" aria-pressed="${draft.switches[i]}"><svg viewBox="0 0 180 60" aria-hidden="true"><path d="M22 44H158" stroke="#4c6a72" stroke-width="5"/><circle cx="30" cy="42" r="9" fill="#e5c27c"/><circle cx="150" cy="42" r="9" fill="#e5c27c"/><path d="M30 42L${draft.switches[i]?'150 42':'127 9'}" stroke="${draft.switches[i]?'#ffe2a1':'#90a8b0'}" stroke-width="10" stroke-linecap="round"/></svg><span>${draft.switches[i]?'닫힘 · 누르면 열려요':'열림 · 누르면 닫혀요'}</span></button>${ends(id+'1',id+'2',name)}</section>`;}).join('');
-    const battery=`<section class="work-part power-part"><h3>전지 ${draft.cells===2?'두 개 · 직렬':'한 개'}</h3><svg class="work-cells" viewBox="${draft.cells===2?'0 0 240 82':'60 0 120 82'}" aria-hidden="true">${draft.cells===2?'<path d="M106 41H132" stroke="#b4e4d9" stroke-width="7"/>'+cell(12,true)+cell(132,!draft.flipped):cell(73,true)}</svg>${ends('p','n','전지')}<div class="cell-actions">${m.cellChoice?`<button id="cell-count">${draft.cells===1?'전지 하나 더 놓기':'전지 한 개로 비교'}</button>`:''}${draft.cells===2?'<button id="cell-flip">두 번째 전지 뒤집기</button>':''}</div></section>`;
-    const material=m.material?`<section class="work-part material-part"><h3>연결할 재료</h3><div class="material-options">${[['copper','구리'],['plastic','플라스틱'],['rubber','고무']].map(([id,label])=>`<button data-material="${id}" aria-pressed="${draft.material===id}">${label}</button>`).join('')}</div>${ends('m1','m2','재료')}</section>`:'';
+    const battery=`<section class="work-part power-part"><h3>전지 ${draft.cells===2?'두 개 · 직렬':'한 개'}</h3><svg class="work-cells" viewBox="${draft.cells===2?'0 0 240 82':'60 0 120 82'}" aria-hidden="true">${draft.cells===2?'<path d="M106 41H132" stroke="#b4e4d9" stroke-width="7"/>'+cell(12,true)+cell(132,!draft.flipped):cell(73,true)}</svg>${ends('p','n','전지')}<p class="cell-junction"></p><div class="cell-actions">${m.cellChoice?`<button id="cell-count">${draft.cells===1?'전지 하나 더 놓기':'전지 한 개로 비교'}</button>`:''}${draft.cells===2?'<button id="cell-flip">두 번째 전지 뒤집기</button>':''}</div></section>`;
+    const material=m.material?`<section class="work-part material-part"><h3>연결할 재료</h3><div class="material-options">${[['copper','구리'],['plastic','플라스틱'],['rubber','고무']].map(([id,label])=>`<button data-material="${id}" aria-pressed="${draft.material===id}"><i class="material-sample sample-${id}" aria-hidden="true"></i>${label}</button>`).join('')}</div>${ends('m1','m2','재료')}</section>`:'';
     board.dataset.mission=index;board.dataset.bulbs=m.bulbs;board.dataset.switches=m.switches;board.dataset.material=!!m.material;
     parts.innerHTML=lamps+switches+battery+material;
     for(const b of parts.querySelectorAll('[data-port]')){
@@ -36,7 +36,7 @@ export function createMissionPanel({onChange,onComplete,onClose}){
   function choose(id){
     if(erasing){message.textContent='연결점 대신 지울 전선이나 아래 전선 이름을 누르세요.';return;}
     if(selected===id){selected=null;updateView();drawWires();return;}
-    if(!selected){selected=id;updateView();drawWires();return;}
+    if(!selected){if(index===0&&!result.passed&&[['p','a1'],['n','a2']].some(pair=>pair.includes(id)&&draft.wires.some(w=>w.includes(pair[0])&&w.includes(pair[1])))){updateView();message.textContent='여기는 이미 이어져 있어요. ①과 ②가 붙은 큰 원을 찾아요.';return;}selected=id;updateView();drawWires();return;}
     const a=selected;
     if(index===0&&![['p','a1'],['n','a2']].some(pair=>pair.includes(a)&&pair.includes(id))){selected=null;updateView();message.textContent='첫 문제는 전지 ＋와 전구의 왼쪽 큰 원을 이어요. ①과 ②를 찾아보세요.';return;}
     if(draft.wires.some(w=>w.includes(a)&&w.includes(id))){selected=null;message.textContent='이미 이어진 두 점이에요.';updateView(false);return;}
@@ -55,7 +55,7 @@ export function createMissionPanel({onChange,onComplete,onClose}){
   function updateView(updateMessage=true){
     result=checkMission(m,draft);
     const preview=trial?trial.steps[trial.at].result:removed.length?simulate(m,draft,{removed}):result.result,bad=shortWireIndices(m,draft);
-    const missing=result.checks.filter(c=>!c.ok).length,brief=BRIEFS[index];
+    const brief=BRIEFS[index];
     board.classList.toggle('erase-mode',erasing);board.classList.toggle('tested',inspected);
     dialog.querySelector('#work-erase').setAttribute('aria-pressed',String(erasing));
     dialog.querySelector('#work-erase').textContent=erasing?'선 지우기 끝내기':'선 지우기';dialog.querySelector('#work-undo').disabled=!history.length;
@@ -63,34 +63,36 @@ export function createMissionPanel({onChange,onComplete,onClose}){
     for(const b of parts.querySelectorAll('[data-port]')){
       b.classList.toggle('selected',selected===b.dataset.port);b.classList.toggle('wired',draft.wires.some(w=>w.includes(b.dataset.port)));b.setAttribute('aria-pressed',String(selected===b.dataset.port));
       const step=coaching?(b.dataset.port===coachPair[0]?1:b.dataset.port===coachPair[1]?2:0):0;
-      b.classList.toggle('coach-port',!!step);b.querySelector('.coach-number').textContent=step||'';
+      b.classList.toggle('coach-port',!!step);b.classList.toggle('coach-next',!!step&&!!selected&&selected!==b.dataset.port);b.querySelector('.coach-number').textContent=step||'';
     }
     let text=result.passed?(needsProof()?'연결됐어요! ‘'+brief.probe+'’로 목표대로 되는지 확인해요.':(index>=4?'시험까지 성공!':'연결 성공!')+' 아래 ‘이곳에 빛 보내기’를 누르세요.'):index===0?'① '+portName(coachPair[0])+' → ② '+portName(coachPair[1])+'을 차례로 누르세요.':index===1?'스위치의 비스듬한 막대를 누르면 두 점이 이어져요.':brief.try;
     if(result.result.short||result.result.voltage===0||inspected)text=diagnosis(index,m,draft);
     if(erasing)text='지울 선을 직접 누르거나, 아래 전선 이름을 눌러 지워요.';
-    if(selected)text=portName(selected)+' 선택됨 → 이어 줄 다른 연결점을 누르세요.';
+    if(selected)text=index===0?portName(selected)+' 선택했어요. 이제 '+portName(coachPair.find(id=>id!==selected)||coachPair[1])+'을 누르세요.':portName(selected)+' 선택됨 → 이어 줄 다른 연결점을 누르세요.';
     if(removed.length)text='전구 '+removed[0].toUpperCase()+'를 뺐어요. 다른 전구를 관찰한 뒤 다시 꽂아 주세요.';
     if(trial)text='시험 중 · 배선은 그대로예요. 불빛을 보고 ‘'+(trial.at<trial.steps.length-1?'다음 비교':'관찰 끝 · 회로로')+'’를 누르세요.';
     if(updateMessage)message.textContent=text;
     const list=dialog.querySelector('#work-wire-list'),show=erasing||bad.length>0;
-    list.hidden=!show;list.innerHTML=show?draft.wires.map(([a,b],i)=>(erasing||bad.includes(i))?'<button data-delete-wire="'+i+'" class="'+(bad.includes(i)?'fault-wire':'')+'">'+(bad.includes(i)?'⚠ ':'')+portName(a)+' ↔ '+portName(b)+' · 지우기</button>':'').join(''):'';
+    list.hidden=!show;list.innerHTML=show?draft.wires.map(([a,b],i)=>(erasing||bad.includes(i))?'<button data-delete-wire="'+i+'" class="'+(bad.includes(i)?'fault-wire':'')+'">'+(bad.includes(i)?'지름길 · ':'')+portName(a)+' ↔ '+portName(b)+' · 지우기</button>':'').join(''):'';
     list.querySelectorAll('[data-delete-wire]').forEach(b=>b.onclick=()=>edit(()=>draft.wires.splice(+b.dataset.deleteWire,1),false));
-    feedback.innerHTML='<span class="conditions-title">'+(missing?'남은 조건 '+missing+'개':'회로 조건 완료')+'</span>'+result.checks.map(c=>'<span class="condition '+(c.ok?'passed':'pending')+'">'+(c.ok?'✓':'○')+' '+c.label+'</span>').join('');
+    const checks=index===9?[{label:'① 지름길 없음',ok:!result.result.short},{label:'② 전지 방향 맞음',ok:!draft.flipped},...result.checks.filter(c=>c.label!=='전지 2개를 바른 방향으로')]:result.checks;
+    feedback.innerHTML='<span class="conditions-title">'+(checks.some(c=>!c.ok)?'목표 확인':'회로 조건 완료')+'</span>'+checks.map(c=>'<span class="condition '+(c.ok?'passed':'pending')+'">'+(c.ok?'✓':'○')+' '+c.label+'</span>').join('');
     primary.textContent=trial?'시험 중이에요':removed.length?'전구를 다시 꽂아 주세요':result.passed?(needsProof()?'작동 시험하기':'이곳에 빛 보내기'):'어디가 문제일까?';primary.disabled=!!removed.length||!!trial;primary.classList.toggle('success',result.passed&&!removed.length&&!trial&&!needsProof());
     dialog.querySelector('#work-experiment').hidden=!brief.probe;
     const probe=dialog.querySelector('#work-probe');probe.textContent=brief.probe||'';probe.hidden=!!trial;probe.disabled=!!removed.length;
-    dialog.querySelector('#work-proof').textContent=proof===signature()?'✓ 이 회로의 작동을 확인했어요':index>=4?'고친 뒤 시험하면 빛을 보낼 수 있어요':'불빛이 어떻게 바뀌는지 시험할 수 있어요';
+    dialog.querySelector('#work-proof').textContent=proof===signature()?'✓ 이 회로의 작동을 확인했어요':index===2?'목표: 스위치를 끄면 불도 꺼져요':index===6?'목표: 하나를 빼면 둘 다 꺼져요':index===7?'목표: 남은 전구는 밝기 그대로':index===8?'목표: A 스위치는 A만, B 스위치는 B만':index>=4?'고친 뒤 시험하면 빛을 보낼 수 있어요':'배선은 그대로 두고 재료만 비교해요';
     const observation=dialog.querySelector('#work-observation');observation.hidden=!trial;
-    if(trial){const step=trial.steps[trial.at];dialog.querySelector('#work-observe-title').textContent=(trial.at+1)+' / '+trial.steps.length+' · '+step.label;dialog.querySelector('#work-observe-result').textContent=step.result.short?'전구를 건너뛰는 길이 남아 있어요.':step.result.brightness.map((v,j)=>'전구 '+String.fromCharCode(65+j)+' '+(step.removed?.includes(String.fromCharCode(97+j))?'빠짐':v>.001?'켜짐':'꺼짐')).join(' · ');dialog.querySelector('#work-observe-next').textContent=trial.at<trial.steps.length-1?'다음 비교':'관찰 끝 · 회로로';}
+    if(trial){const step=trial.steps[trial.at];dialog.querySelector('#work-observe-title').textContent=(trial.at+1)+' / '+trial.steps.length+' · '+step.label;dialog.querySelector('#work-observe-result').textContent=observationText(m,draft,step);dialog.querySelector('#work-observe-next').textContent=trial.at<trial.steps.length-1?'다음 비교':'관찰 끝 · 회로로';}
     for(const b of parts.querySelectorAll('button'))b.disabled=!!trial;
     const step=trial?.steps[trial.at],previewSwitches=step?.switches||draft.switches,previewCells=step?.cells||draft.cells;
     for(const b of parts.querySelectorAll('[data-switch]')){
       const on=previewSwitches[+b.dataset.switch],name=m.switches===1?'스위치':'스위치 '+(+b.dataset.switch?'B':'A');
       b.setAttribute('aria-pressed',String(on));b.setAttribute('aria-label',name+(on?' 끄기':' 켜기'));
-      b.querySelector('span').textContent=on?'켜짐 · 누르면 끄기':'꺼짐 · 누르면 켜기';
+      b.querySelector('span').textContent=on?'켜짐 · 누르면 끄기':'꺼짐 · 누르면 켜기';b.classList.toggle('switch-callout',index===1&&!on&&!trial);
       const arm=b.querySelector('svg path:last-child');arm.setAttribute('d','M30 42L'+(on?'150 42':'127 9'));arm.setAttribute('stroke',on?'#ffe2a1':'#90a8b0');
     }
-    parts.querySelector('.power-part h3').textContent='전지 '+(previewCells===2?'두 개 · 직렬':'한 개');
+    parts.querySelector('.power-part h3').textContent='전지 '+(previewCells===2?'두 개':'한 개');
+    const junction=parts.querySelector('.cell-junction');junction.hidden=previewCells!==2;junction.classList.toggle('opposed',draft.flipped);junction.textContent=draft.flipped?'가운데: − 와 − · 같은 극':'가운데: − 와 ＋ · 다른 극';
     parts.querySelector('[data-port="n"] span').textContent=previewCells===2&&draft.flipped?'＋':'−';
     const batteryArt=parts.querySelector('.work-cells');batteryArt.setAttribute('viewBox',previewCells===2?'0 0 240 82':'60 0 120 82');batteryArt.innerHTML=previewCells===2?'<path d="M106 41H132" stroke="#b4e4d9" stroke-width="7"/>'+cell(12,true)+cell(132,!draft.flipped):cell(73,true);
     for(const b of parts.querySelectorAll('[data-material]'))b.setAttribute('aria-pressed',String(b.dataset.material===(step?.material||draft.material)));
@@ -105,7 +107,7 @@ export function createMissionPanel({onChange,onComplete,onClose}){
       const status=isRemoved?'빼 놓음':value>.001?'켜짐':'꺼짐';
       el.setAttribute('aria-label',el.querySelector('h3').textContent+' '+status);
       let meter=el.querySelector('.lamp-status');if(!meter){meter=document.createElement('div');meter.className='lamp-status';el.querySelector('.work-bulb').after(meter);}
-      meter.textContent=status;meter.style.setProperty('--brightness',Math.round(Math.sqrt(value)*100)+'%');
+      meter.textContent=status;if(trial?.steps[trial.at].removed?.length&&!isRemoved&&value>.001){const original=result.result.brightness[+el.dataset.lamp];meter.textContent=Math.abs(value-original)<.001?'밝기 그대로':value>original?'더 밝아짐':'더 어두워짐';}meter.style.setProperty('--brightness',Math.round(Math.sqrt(value)*100)+'%');
       const button=el.querySelector('[data-remove]');if(button)button.textContent=removed.includes(id)?'전구 '+id.toUpperCase()+' 다시 꽂기':'전구 '+id.toUpperCase()+' 빼 보기';
     }
   }
