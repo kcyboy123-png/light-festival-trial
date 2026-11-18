@@ -5,7 +5,7 @@ import {createStarfox} from './character.js';
 import {createGardens} from './gardens.js';
 import {plantBorders,loadGardenModels} from './planted-borders.js';
 import {createAwakening} from './awakening.js';
-import {createCarousel} from './carousel-world.js';
+import {createCarousel,bakeMeshes} from './carousel-world.js';
 import {createFestivalReveal} from './festival-reveal.js';
 import {createGardenCuriosities} from './garden-curiosities.js';
 import {createFlowerClue} from './flower-clue.js';
@@ -75,8 +75,8 @@ export async function createWorld(scene,renderer,quality='high'){
     totalEmissiveRadiance*=.22+pow(mid,5.)*.7+vein*.35+pow(petalUV.y,3.)*.55;
     diffuseColor.rgb*=.8+petalUV.y*.2;`);};return m;}
   const petalMaterials=[petalMaterial(0x8c82ff),petalMaterial(0xeb84cc),petalMaterial(0x66d9f1)];
-  function flower(parent,scale=1,animated=false){const root=new T.Group();root.scale.setScalar(scale);parent.add(root);for(let layer=0;layer<2;layer++){const count=layer?8:10,length=layer?2.7:4.1,width=layer?.68:1.05,rise=layer?4.6:2.85;const g=petalGeometry(length,width,rise);for(let i=0;i<count;i++){const pivot=new T.Group();pivot.rotation.y=i/count*TAU+layer*.25;root.add(pivot);const part=new T.Group();pivot.add(part);mesh(g,petalMaterials[(i+layer)%3],[0,0,0],part);for(const side of [-1,1]){let points=[];for(let k=0;k<=36;k++){const t=k/36;points.push(V(side*Math.pow(Math.sin(Math.PI*t),.72)*width,rise*t+.55*Math.sin(Math.PI*t),length*Math.pow(t,1.45)));}tube(points,.022,layer?amber2:violet,part,40);}const center=[];for(let k=0;k<=32;k++){const t=k/32;center.push(V(0,rise*t+.025,length*Math.pow(t,1.45)));}tube(center,.014,amber2,part,32);if(animated)petals.push({part,layer});}}
-    const heart=mesh(new T.SphereGeometry(.64,24,32),amber2,[0,2,0],root);heart.scale.set(.7,1.9,.7);for(let i=0;i<9;i++){const a=i/9*TAU;tube([V(0,.2,0),V(Math.sin(a)*.55,1.8,Math.cos(a)*.55),V(Math.sin(a)*.3,3.4,Math.cos(a)*.3)],.025,amber2,root,30);}return root;}
+  function flower(parent,scale=1,animated=false){const root=new T.Group();root.scale.setScalar(scale);parent.add(root);for(let layer=0;layer<2;layer++){const count=layer?8:10,length=layer?2.7:4.1,width=layer?.68:1.05,rise=layer?4.6:2.85;const g=petalGeometry(length,width,rise);for(let i=0;i<count;i++){const pivot=new T.Group();pivot.rotation.y=i/count*TAU+layer*.25;root.add(pivot);const part=new T.Group();pivot.add(part);mesh(g,petalMaterials[(i+layer)%3],[0,0,0],part);for(const side of [-1,1]){let points=[];for(let k=0;k<=36;k++){const t=k/36;points.push(V(side*Math.pow(Math.sin(Math.PI*t),.72)*width,rise*t+.55*Math.sin(Math.PI*t),length*Math.pow(t,1.45)));}tube(points,.022,layer?amber2:violet,part,40);}const center=[];for(let k=0;k<=32;k++){const t=k/32;center.push(V(0,rise*t+.025,length*Math.pow(t,1.45)));}tube(center,.014,amber2,part,32);if(animated){bakeMeshes(part);petals.push({part,layer});}}}
+    const core=new T.Group();root.add(core);    const heart=mesh(new T.SphereGeometry(.64,24,32),amber2,[0,2,0],core);heart.scale.set(.7,1.9,.7);for(let i=0;i<9;i++){const a=i/9*TAU;tube([V(0,.2,0),V(Math.sin(a)*.55,1.8,Math.cos(a)*.55),V(Math.sin(a)*.3,3.4,Math.cos(a)*.3)],.025,amber2,core,30);}bakeMeshes(core);core.updateMatrix();core.matrixAutoUpdate=false;return root;}
   flower(flowerRoot,1.15,true);
   const fountainJets=new T.ShaderMaterial({transparent:true,depthWrite:false,blending:T.AdditiveBlending,uniforms:{time:{value:0},light:{value:1}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 vUv;uniform float time;uniform float light;void main(){float bead=pow(.5+.5*sin(vUv.x*100.-time*6.),12.);float edge=.25+.75*pow(abs(sin(vUv.y*3.14159)),2.);vec3 color=mix(vec3(.25,.75,.9),vec3(1.,.85,.65),bead);gl_FragColor=vec4(color*(1.+bead),(.25+.65*bead)*edge*light);}' });
   const jetParts=[];for(let i=0;i<24;i++){const a=i/24*TAU,dx=Math.sin(a),dz=Math.cos(a);const c=new T.QuadraticBezierCurve3(V(dx*4.1,1.83,-8+dz*4.1),V(dx*3.7,4.5,-8+dz*3.7),V(dx*2.8,1.9,-8+dz*2.8));jetParts.push(new T.TubeGeometry(c,36,.022,5,false));}const jetMesh=new T.Mesh(mergeGeometries(jetParts),fountainJets);scene.add(jetMesh);
@@ -155,8 +155,9 @@ export async function createWorld(scene,renderer,quality='high'){
   const fountainClue=createFlowerClue(scene,nodes[loop[90]],'carousel');fountainClue.node=loop[90];
   const curiosities=createGardenCuriosities(scene,[nodes[mainPath.ids[16]],nodes[bridge.ids[16]],nodes[loop[48]],nodes[carouselLoop[44]]]);
   const plazas=[{x:0,z:-8,y:1.2,inner:5.15,outer:7.65},{x:-25,z:14,y:1.2,inner:6.6,outer:7.95}];
-  const floorRay=new T.Raycaster(),floorOrigin=new T.Vector3(),floorDown=V(0,-1,0),floorHits=[];
-  function floorBelow(p){floorOrigin.set(p.x,6,p.z);floorHits.length=0;floorRay.set(floorOrigin,floorDown);return floorRay.intersectObjects(walkMeshes,false,floorHits)[0];}
+  const floorRay=new T.Raycaster(),floorOrigin=new T.Vector3(),floorDown=V(0,-1,0),floorHits=[],nearFloor=[];
+  const walkBounds=walkMeshes.map(mesh=>{mesh.geometry.computeBoundingBox();return new T.Box3().copy(mesh.geometry.boundingBox).applyMatrix4(mesh.matrixWorld);});
+  function floorBelow(p){floorOrigin.set(p.x,6,p.z);floorHits.length=0;floorRay.set(floorOrigin,floorDown);nearFloor.length=0;walkBounds.forEach((b,i)=>{if(p.x>=b.min.x-.001&&p.x<=b.max.x+.001&&p.z>=b.min.z-.001&&p.z<=b.max.z+.001)nearFloor.push(walkMeshes[i]);});return floorRay.intersectObjects(nearFloor,false,floorHits)[0];}
   function onPath(p,from=null){if(obstacles.some(o=>{const d=Math.hypot(p.x-o.x,p.z-o.z);return d<o.radius&&(!from||d<=Math.hypot(from.x-o.x,from.z-o.z)+.000001);}))return false;return !!floorBelow(p);}
   function floorBlocked(ray,floor){
     const meshes=[];scene.traverse(o=>{if(!o.isMesh||walkMeshes.includes(o))return;for(let p=o;p;p=p.parent)if(p===hero||!p.visible)return;const materials=Array.isArray(o.material)?o.material:[o.material];if(materials.some(m=>!m.transparent&&m.opacity>0))meshes.push(o);});

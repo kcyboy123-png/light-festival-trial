@@ -31,9 +31,12 @@ export function plantBorders(scene, lightMats, models) {
       }
       const m=new T.MeshStandardMaterial({vertexColors:!!g.attributes.color&&!bark,color:bark?0xb3a8a1:petal?0xffffff:0x99c9bc,map:bark?barkTex():leaf?foliageDetailTex():null,roughness:bark?.88:.63,side:bark?T.FrontSide:T.DoubleSide,bumpMap:bark?surfaceData(barkTex()):null,bumpScale:.035,envMapIntensity:.25});
       if(petal){m.emissive.set(0xffe5d6);m.emissiveIntensity=.48;m.onBeforeCompile=s=>{s.fragmentShader=s.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n#if defined(USE_COLOR) || defined(USE_COLOR_ALPHA) || defined(USE_INSTANCING_COLOR)\n totalEmissiveRadiance*=vColor.rgb;\n#endif');};lightMats.push({m,stage:2,power:.48});}
-      const mesh=new T.InstancedMesh(g,m,locations.length),dummy=new T.Object3D();
-      locations.forEach(([x,y,z,s,a],i)=>{dummy.position.set(x,y,z);dummy.rotation.set(0,a,0);dummy.scale.setScalar(s);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);if(petal){const colors=kind==='cherry'?[0xf3b3cc,0xe8b7de,0xf6c9b7]:z>0?(x<0?[0xefb370,0xe991ad,0xe4c67e]:[0xeb8fb9,0xc29ce9,0xe6b0ce]):[0x81bfdb,0x98a4e8,0x89caba];mesh.setColorAt(i,new T.Color(colors[i%colors.length]));}});
-      mesh.name=`forest-${kind}-${name}`;mesh.castShadow=mesh.receiveShadow=true;mesh.computeBoundingSphere();mesh.updateMatrix();mesh.matrixAutoUpdate=false;scene.add(mesh);stats.parts++;
+      // Shift cell edges away from the continuous flower borders.
+      const cells=new Map();locations.forEach((location,index)=>{const key=Math.floor((location[0]+9)/18)+':'+Math.floor((location[2]+9)/18);if(!cells.has(key))cells.set(key,[]);cells.get(key).push({location,index});});
+      for(const entries of cells.values()){
+      const mesh=new T.InstancedMesh(g,m,entries.length),dummy=new T.Object3D();
+      entries.forEach(({location:[x,y,z,s,a],index},i)=>{dummy.position.set(x,y,z);dummy.rotation.set(0,a,0);dummy.scale.setScalar(s);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);if(petal){const colors=kind==='cherry'?[0xf3b3cc,0xe8b7de,0xf6c9b7]:z>0?(x<0?[0xefb370,0xe991ad,0xe4c67e]:[0xeb8fb9,0xc29ce9,0xe6b0ce]):[0x81bfdb,0x98a4e8,0x89caba];mesh.setColorAt(i,new T.Color(colors[index%colors.length]));}});
+      mesh.name=`forest-${kind}-${name}`;mesh.castShadow=mesh.receiveShadow=true;mesh.computeBoundingSphere();mesh.updateMatrix();mesh.matrixAutoUpdate=false;scene.add(mesh);stats.parts++;}
     });
     stats.plants+=locations.length;stats.models.push(kind);
   }

@@ -151,6 +151,12 @@ export function createGardens(scene, {root, mesh, tube, cyl, ring, arch, mat, gl
       ring(0,2.6,0,1.9,gold,.065,gazebo);cyl(0,3.85,0,.1,.7,amber,0,gazebo);
     }
     group.updateMatrixWorld(true);
+    // Warm rosettes frame windows above eye level; the paths and clue flowers stay clear.
+    for(let j=0;j<5;j++){
+      const px=(j-2)*width*.17,py=height*.72;
+      for(let k=0;k<6;k++){const a=k/6*TAU,p=V(px+Math.cos(a)*.25,py+Math.sin(a)*.25,2.82).applyMatrix4(group.matrixWorld);instance(budG,blossoms[0],p.toArray(),[0,angle,a-Math.PI/2],[.11,.2,.065]);}
+      const p=V(px,py,2.87).applyMatrix4(group.matrixWorld);instance(beadG,amber,p.toArray(),[0,0,0],[2.5,2.5,2.5]);
+    }
     for(let j=0;j<18;j++){
       const p=V((j/17-.5)*(width-.6),height+.2,2.8).applyMatrix4(group.matrixWorld);
       vine(p.x,p.y,p.z,1.2+random()*2);
@@ -197,7 +203,7 @@ export function createGardens(scene, {root, mesh, tube, cyl, ring, arch, mat, gl
   // Low seasonal clusters reuse the garden's petals and leaves without narrowing the paths.
   const accentColors=[0xf2b87b,0xe984ad,0x8d9fe5,0x77c9b9,0xe4c978];
   const accentMats=accentColors.map(color=>{const m=glow(color,2,.42);m.color.set(color);m.metalness=.08;m.roughness=.55;m.side=T.DoubleSide;return m;});
-  const stemG=new T.CylinderGeometry(.012,.018,1,6),patches=[[-5.2,1.1,16,0,0],[5.1,1.1,14,1,1],[-8,1.1,20.5,2,2],[8,1.1,20,0,1],[-11,1.1,-12.8,2,2],[12,1.1,-12.8,1,0],[-16,1,-10.8,3,1],[29,1,-18,4,0]];
+  const stemG=new T.CylinderGeometry(.012,.018,1,6),patches=[[-5.2,1.1,16,0,0],[5.1,1.1,14,1,1],[-8,1.1,20.5,2,2],[8,1.1,20,0,1],[-11,1.1,-12.8,2,2],[12,1.1,-12.8,1,0],[-16,1,-10.8,3,1],[29,1,-18,4,0],[-34,.96,9,3,2],[-34,.96,19,2,0],[-16,.96,19,1,1],[-16,1,-18,2,2],[18,1,-18,3,1],[-13.5,1,17,1,0],[28,1,-21,4,0],[-19,1,-13,0,1]];
   for(const [cx,cy,cz,color,form]of patches)for(let i=0;i<15;i++){
     const a=i*2.399963,r=Math.sqrt((i+.5)/15)*.85,x=cx+Math.cos(a)*r,z=cz+Math.sin(a)*r,h=.5+(i%4)*.085,m=accentMats[(color+(i%5===0?1:0))%accentMats.length];
     instance(stemG,foliage[0],[x,cy+h/2,z],[0,0,0],[1,h,1]);
@@ -215,5 +221,5 @@ export function createGardens(scene, {root, mesh, tube, cyl, ring, arch, mat, gl
   for(const {g,m,transforms}of batches.values()){
     const o=new T.InstancedMesh(g,m,transforms.length);transforms.forEach((matrix,i)=>o.setMatrixAt(i,matrix));o.castShadow=true;o.receiveShadow=true;o.computeBoundingSphere();o.updateMatrix();o.matrixAutoUpdate=false;scene.add(o);instances+=transforms.length;
   }
-  return {instances,trees:4,flowerbeds:4,terraces:6,plantedIslands:7,accentPatches:patches.length,waterGardens:3};
+  return {instances,trees:4,flowerbeds:4,terraces:6,plantedIslands:7,accentPatches:patches.length,facadeRosettes:30,waterGardens:3};
 }

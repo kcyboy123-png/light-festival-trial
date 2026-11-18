@@ -9,10 +9,12 @@ export function createAwakening(scene, lightMats) {
   const radii={value:new T.Vector3(-5,-5,-5)},enabled={value:0};
   const festivalRadius={value:-5},festivalOrigin={value:new T.Vector3(-17.7,1.25,14)},festivalPulse={value:0};
   const code=`uniform vec3 wakeRadius;uniform float wakeEnabled,wakeMission;varying vec3 wakeWorld;
-    float wakeLight(vec3 p){float a=1.-smoothstep(wakeRadius.x-3.,wakeRadius.x,length(p.xz-vec2(4.,15.)));
-      float b=1.-smoothstep(wakeRadius.y-3.,wakeRadius.y,length(p.xz-vec2(-15.,1.)));
+    float wakeLight(vec3 p){
+      if(wakeMission==1.)return 1.-smoothstep(wakeRadius.y-3.,wakeRadius.y,length(p.xz-vec2(-15.,1.)));
       float c=1.-smoothstep(wakeRadius.z-4.,wakeRadius.z,length(p.xz-vec2(0.,-8.)));
-      if(wakeMission==1.)return b;if(wakeMission==2.)return c;
+      if(wakeMission==2.||c>=1.)return c;
+      float a=1.-smoothstep(wakeRadius.x-3.,wakeRadius.x,length(p.xz-vec2(4.,15.)));
+      float b=1.-smoothstep(wakeRadius.y-3.,wakeRadius.y,length(p.xz-vec2(-15.,1.)));
       a*=smoothstep(-11.,-5.,p.x);
       float plaza=smoothstep(8.,11.,length(p.xz-vec2(0.,-8.)));a*=plaza;b*=plaza;
       return max(a,max(b,c));}`;

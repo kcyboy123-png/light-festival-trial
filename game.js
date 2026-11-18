@@ -98,7 +98,7 @@ export function createGame(world,{travel,resume,goView,project,reduceMotion}){
     if(!reveal&&approaching===null){
       $('#mission-action').disabled=false;
       $('#mission-action').textContent=searchNear?(needsClue()?'꽃 속 그림 살펴보기 · E':state.carousel.restored?'밝기 다시 비교하기 · E':['가로등 살펴보기 · E','다리 가로등 살펴보기 · E','분수 가로등 살펴보기 · E','회전목마 살펴보기 · E'][state.completed]):state.carousel.restored?'여우 따라가기 · F':'길 찾기 도움 · H';
-      const quiet=needsClue()?'불이 켜진 꽃 사이에 그림이 나타났어요.':state.completed===0?'별여우와 함께 꺼진 불빛을 찾아봐요.':state.carousel.restored?'빛의 도시를 천천히 거닐어 보세요.':'그림 속 모양을 떠올리며 걸어봐요.';
+      const quiet=needsClue()?'불이 켜졌어요! 꽃 속에 숨은 그림을 찾아봐요.':state.completed===0?'별여우와 함께 꺼진 불빛을 찾아봐요.':state.carousel.restored?'빛의 도시를 천천히 거닐어 보세요.':'그림 속 모양을 떠올리며 걸어봐요.';
       const soft=needsClue()?'꽃잎 사이에서 작은 빛이 반짝여요.':state.completed===0?'길가의 꺼진 등을 가까이 살펴볼까요?':['','휘어진 길과 별 장식을 찾아볼까요?','꽃잎 모양이 보이는 곳을 살펴볼까요?','금빛 지붕과 작은 목마를 찾아볼까요?'][state.completed];
       $('#mission-line').textContent=state.carousel.restored?'네가 연결한 회로로 빛의 도시가 깨어났어요!':searchNear?(needsClue()?'꽃잎 아래에 그림이 있어요!':'가까이 왔어요. 직접 살펴볼까요?'):searchLevel>=3?'갈림길의 작은 별빛을 따라 걸어볼까요?':searchLevel>=2?'발밑에 별빛이 모였어요. 조금 따라가 봐요.':searchLevel===1?soft:quiet;
     }
@@ -142,6 +142,7 @@ export function createGame(world,{travel,resume,goView,project,reduceMotion}){
     world.firstClue.setReveal(values[0]);
     world.bridgeClue.setReveal(values[1]);
     world.fountainClue.setReveal(values[2]);
+    clues.forEach((clue,i)=>clue.setFocus(needsClue()&&i===clueIndex()&&searchNear&&!modal()&&!reveal));
     world.carousel.setLight(carouselLight);
     const phase=festivalTiming(festivalProgress);
     world.awakening.setFestival(phase.radius,origin,festivalRunning&&!reduceMotion?phase.fade:0);

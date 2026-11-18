@@ -2,6 +2,12 @@ import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 const V=(x,y,z)=>new T.Vector3(x,y,z),TAU=Math.PI*2;
+export function bakeMeshes(group){
+    group.updateMatrixWorld(true);const inverse=group.matrixWorld.clone().invert(),batches=new Map();
+    group.traverse(o=>{if(!o.isMesh)return;const g=o.geometry.clone().applyMatrix4(inverse.clone().multiply(o.matrixWorld));if(!g.index)g.setIndex(Array.from({length:g.attributes.position.count},(_,i)=>i));if(!batches.has(o.material))batches.set(o.material,[]);batches.get(o.material).push(g);});
+    group.clear();for(const [m,geos]of batches){const g=mergeGeometries(geos);const part=new T.Mesh(g,m);part.castShadow=part.receiveShadow=true;group.add(part);part.updateMatrix();part.matrixAutoUpdate=false;geos.forEach(g=>g.dispose());}
+  }
+
 export function createCarousel(scene){
   const root=new T.Group(),fixed=new T.Group(),rotor=new T.Group();root.add(fixed,rotor);
   const standard=(color,metalness=.3,roughness=.3)=>new T.MeshStandardMaterial({color,metalness,roughness,envMapIntensity:.5});
@@ -13,11 +19,6 @@ export function createCarousel(scene){
   function cyl(r,h,y,m,parent=fixed,r2=r){return mesh(new T.CylinderGeometry(r2,r,h,64),m,[0,y,0],parent);}
   function tube(points,r,m,parent=fixed,n=32){return mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points.map(p=>V(...p))),n,r,6,false),m,[0,0,0],parent);}
   function ring(r,y,m,parent=fixed,width=.04){const o=mesh(new T.TorusGeometry(r,width,8,96),m,[0,y,0],parent);o.rotation.x=Math.PI/2;return o;}
-  function bake(group){
-    group.updateMatrixWorld(true);const inverse=group.matrixWorld.clone().invert(),batches=new Map();
-    group.traverse(o=>{if(!o.isMesh)return;const g=o.geometry.clone().applyMatrix4(inverse.clone().multiply(o.matrixWorld));if(!g.index)g.setIndex(Array.from({length:g.attributes.position.count},(_,i)=>i));if(!batches.has(o.material))batches.set(o.material,[]);batches.get(o.material).push(g);});
-    group.clear();for(const [m,geos]of batches){const g=mergeGeometries(geos);const part=mesh(g,m,[0,0,0],group);part.updateMatrix();part.matrixAutoUpdate=false;geos.forEach(g=>g.dispose());}
-  }
   // Porcelain horses have volume on both sides, articulated-looking legs and carved tack.
   function horse(){
     const h=new T.Group();sphere([0,1.15,0],[.82,.36,.31],ivory,h);sphere([-.57,1.12,0],[.35,.36,.32],ivory,h);
@@ -36,7 +37,7 @@ export function createCarousel(scene){
     for(let i=0;i<4;i++)tube([[-.7,1.27,(i-1.5)*.06],[-1.02,1.2,(i-1.5)*.07],[-1.19,.64,(i-1.5)*.07],[-1.45,.55,(i-1.5)*.05]],.065,gold,h,20);
     sphere([-.06,1.43,0],[.39,.09,.39],teal,h);
     for(const z of [-.34,.34]){const saddle=mesh(new T.ShapeGeometry(new T.Shape().moveTo(-.37,1.42).lineTo(.25,1.42).lineTo(.18,1.02).quadraticCurveTo(-.06,.88,-.28,1.02).closePath()),teal,[0,0,z],h);saddle.material.side=T.DoubleSide;tube([[-.37,1.42,z],[-.28,1.02,z],[-.05,.95,z],[.18,1.02,z],[.25,1.42,z]],.022,gold,h);sphere([-.06,1.17,z],[.075,.11,.025],pinkLight,h);}
-    bake(h);return h;
+    bakeMeshes(h);return h;
   }
   cyl(6.25,.24,1.29,dark);cyl(6.05,.18,1.48,ivory);ring(6.03,1.59,deckLight,fixed,.06);
   cyl(5.8,.17,1.65,teal,rotor);ring(5.65,1.75,gold,rotor,.06);ring(5.82,1.70,deckLight,rotor,.045);
@@ -63,10 +64,13 @@ export function createCarousel(scene){
     const a=i/8*TAU,x=Math.sin(a)*3.9,z=Math.cos(a)*3.9;
     tube([[x,1.72,z],[x,5.83,z]],.045,gold,rotor,1);
     const helix=[];for(let k=0;k<=100;k++){const t=k/100;helix.push([x+Math.cos(t*TAU*8)*.067,1.8+t*3.9,z+Math.sin(t*TAU*8)*.067]);}tube(helix,.012,deckLight,rotor,100);
-    const h=prototype.clone();h.position.set(x,1.9,z);h.rotation.y=a;rotor.add(h);horses.push(h);
+    const h=new T.Object3D();h.position.set(x,1.9,z);h.rotation.y=a;horses.push(h);
   }
   // Keep moving horses separate while the platform and poles share merged materials.
-  horses.forEach(h=>h.removeFromParent());bake(rotor);horses.forEach(h=>rotor.add(h));
+  bakeMeshes(rotor);
+  const horseMatrices=new T.InstancedBufferAttribute(new Float32Array(8*16),16);horseMatrices.setUsage(T.DynamicDrawUsage);
+  horses.forEach((h,i)=>{h.updateMatrix();h.matrix.toArray(horseMatrices.array,i*16);});
+  for(const part of prototype.children){const herd=new T.InstancedMesh(part.geometry,part.material,8);herd.name='carousel-horses';herd.instanceMatrix=horseMatrices;herd.castShadow=herd.receiveShadow=true;herd.computeBoundingSphere();herd.boundingSphere.radius+=.25;herd.updateMatrix();herd.matrixAutoUpdate=false;rotor.add(herd);}
   const leaf=standard(0x34675c,.1,.65),petals=[0xe696ab,0xe9ba79,0x8bbeca,0xb09bdd].map(color=>{const m=standard(color,.1,.5);m.emissive.set(color);return m;});
   for(const side of [-1,1])for(const back of [-1,1]){
     const x=side*9,z=back*5,petal=petals[(side>0?2:0)+(back>0?1:0)];
@@ -81,7 +85,7 @@ export function createCarousel(scene){
     for(let j=2;j<24;j+=3){const p=garland[j];sphere([p[0],p[1]-.12,p[2]],[.065,.12,.065],roofLight);}
   }
   for(let i=0;i<48;i++){const tile=mesh(new T.RingGeometry(7.96,8.15,4,1,i/48*TAU,.065),i%3?teal:rose,[0,1.216,0]);tile.rotation.x=-Math.PI/2;}
-  bake(fixed);fixed.updateMatrix();fixed.matrixAutoUpdate=false;root.position.set(-25,0,14);root.updateMatrix();root.matrixAutoUpdate=false;scene.add(root);
+  bakeMeshes(fixed);fixed.updateMatrix();fixed.matrixAutoUpdate=false;root.position.set(-25,0,14);root.updateMatrix();root.matrixAutoUpdate=false;scene.add(root);
   const point=new T.PointLight(0xffcc8c,0,25,2);point.position.set(-25,5,14);scene.add(point);
   let amount=0,angle=0;
   return {
@@ -90,7 +94,7 @@ export function createCarousel(scene){
       const ease=(a,b)=>T.MathUtils.smoothstep(amount,a,b);
       deckLight.emissiveIntensity=ease(0,.3)*2.3;roofLight.emissiveIntensity=ease(.1,.65)*2.7;pinkLight.emissiveIntensity=ease(.3,.8)*2;gardenLight.emissiveIntensity=ease(.5,1)*2;for(const petal of petals)petal.emissiveIntensity=ease(.4,1)*.4;point.intensity=ease(.1,.8)*72;
       if(!reduced)angle+=dt*.19*ease(.12,.8);rotor.rotation.y=angle;
-      horses.forEach((h,i)=>h.position.y=1.95+(reduced?0:Math.sin(time*1.6+i*Math.PI/2)*.17*ease(.12,.8)));
+      horses.forEach((h,i)=>{h.position.y=1.95+(reduced?0:Math.sin(time*1.6+i*Math.PI/2)*.17*ease(.12,.8));h.updateMatrix();h.matrix.toArray(horseMatrices.array,i*16);});horseMatrices.needsUpdate=true;
     },
     get state(){return {light:amount,angle,horses:horses.length,horseHeights:horses.map(h=>h.position.y)};}
   };
