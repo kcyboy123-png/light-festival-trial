@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {loadModel} from './load-model.js';
+import {softenStarfox} from './fox-face.js?v=trial-20261119-3';
 
 export async function createStarfox(renderer) {
   const gltf=await loadModel('./assets/starfox.glb');
@@ -13,6 +14,7 @@ export async function createStarfox(renderer) {
   model.traverse(o=>{
     if(o.isBone)bones++;
     if(!o.isMesh)return;
+    if(o.name==='Starfox_Surface')hero.userData.faceVertices=softenStarfox(o,T);
     triangles+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3;
     o.castShadow=true;o.receiveShadow=true;
     for(const m of Array.isArray(o.material)?o.material:[o.material]){

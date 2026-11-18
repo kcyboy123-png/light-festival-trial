@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {softenOccluder,inFoxCutout} from './camera-visibility.js';
 import {Water} from 'three/addons/objects/Water.js';
-import {createStarfox} from './character.js';
+import {createStarfox} from './character.js?v=trial-20261119-3';
 import {createGardens} from './gardens.js';
 import {plantBorders,loadGardenModels} from './planted-borders.js';
 import {createAwakening} from './awakening.js?v=trial-20261118-7';

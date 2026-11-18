@@ -5,12 +5,13 @@ import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
-import {createWorld} from './world.js?v=trial-20261119-1';
+import {createWorld} from './world.js?v=trial-20261119-3';
 import {nearestNode,route,walkStep,canTraverse} from './navigation.js';
 import {createExplorationInput} from './exploration-input.js';
-import {createGame} from './game.js?v=trial-20261119-1';
+import {createGame} from './game.js';
 import {safeFollowAngle} from './camera-follow.js';
-import {initialQuality} from './quality-policy.js?v=trial-20261119-1';
+import {initialQuality} from './quality-policy.js';
+import {createArrival} from './arrival.js?v=trial-20261119-3';
 
 const previewMode=new URLSearchParams(location.search).get('preview')==='1';
 const $=s=>document.querySelector(s),canvas=$('#scene'),reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -39,7 +40,7 @@ try{
   const followHeight=()=>3+Math.min(2,Math.max(0,((world.hero.userData.baseY||1.2)-1.2)*2));
   function goView(name,instant=false){const wasFollowing=viewpoint==='fox';viewpoint=name;world.cameraFollowing.value=name==='fox'?1:0;if(!wasFollowing||name!=='fox')lastInput.set(0,0);followLead.set(0,0,0);const pos=world.hero.position;const pose=name==='fox'?{p:[pos.x-walkHeading.x*8,pos.y+1.4+followHeight(),pos.z-walkHeading.z*8],t:[pos.x,pos.y+1.4,pos.z]}:poses[name],p=new T.Vector3(...pose.p),t=new T.Vector3(...pose.t);if(innerHeight>innerWidth)p.sub(t).multiplyScalar(name==='fox'?1.12:1.35).add(t);if(instant||reduceMotion){flight=null;camera.position.copy(p);controls.target.copy(t);controls.update();}else flight={from:camera.position.clone(),target:controls.target.clone(),p,t,start:performance.now()};for(const b of document.querySelectorAll('[data-view]'))b.setAttribute('aria-pressed',String(b.dataset.view===name));}
   goView(previewMode?'entrance':'fox',true);
-  let game=null;let stage=2,walking=[],activeNode=nearestNode(world.nodes,world.hero.position),walkDistance=0;
+  let game=null,arrival=null;let stage=2,walking=[],activeNode=nearestNode(world.nodes,world.hero.position),walkDistance=0;
   const captions=['길 위에 첫 불빛을 밝혀 보세요.','다리가 깨어났어요. 다음은 중앙 광장이에요.','도시 전체에 빛이 돌아왔어요.'];
   function setStage(value,{instant=false}={}){stage=Math.max(0,Math.min(2,value));for(const b of document.querySelectorAll('button[data-stage]'))b.setAttribute('aria-pressed',String(+b.dataset.stage===stage));$('#status').textContent=captions[stage];$('#chapter').textContent=['달빛만 남은 광장','처음 돌아온 따뜻한 빛','내가 깨운 빛의 도시'][stage];document.body.dataset.stage=String(stage);if(instant)world.snap(stage);}
   for(const b of document.querySelectorAll('button[data-stage]'))b.addEventListener('click',()=>setStage(+b.dataset.stage));
@@ -67,9 +68,11 @@ try{
   function project(position){const p=projectPoint.copy(position).project(camera);return {x:(p.x+1)/2*innerWidth,y:(1-p.y)/2*innerHeight,z:p.z};}
   function turn(x,z,dt){const a=Math.atan2(x,z)-world.hero.rotation.y;world.hero.rotation.y+=Math.atan2(Math.sin(a),Math.cos(a))*Math.min(1,dt*12);}
   if(navigator.maxTouchPoints>0)$('#explore-controls p').innerHTML='조이스틱을 밀어 걷기<br>도착하면 회로 고치기';
-  const movement=createExplorationInput(()=>previewMode||!!game?.blocked,()=>game?.interact(),()=>game?.hint(),()=>goView('fox'));
+  const movement=createExplorationInput(()=>previewMode||!!game?.blocked||!!arrival,()=>game?.interact(),()=>game?.hint(),()=>goView('fox'));
+  addEventListener('keydown',e=>{if(arrival&&/^(w|a|s|d|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|Escape)$/i.test(e.key))arrival.finish();},true);
+  addEventListener('pointerdown',e=>{if(arrival&&e.target.closest('#scene,#move-pad'))arrival.finish();},true);
   $('#move-pad').addEventListener('pointerdown',e=>{if(e.button===0&&!previewMode&&!game?.blocked)travel(null);});
-  const guide=new T.Group();scene.add(guide);const guideMat=new T.MeshBasicMaterial({color:0xd5f2e8,transparent:true,opacity:.4,depthWrite:false,toneMapped:false});
+  const guide=new T.Group();guide.visible=false;scene.add(guide);const guideMat=new T.MeshBasicMaterial({color:0xd5f2e8,transparent:true,opacity:.4,depthWrite:false,toneMapped:false});
   const guideDots=Array.from({length:10},()=>new T.Object3D()),guideColor=new T.Color();
   const guideMesh=new T.InstancedMesh(new T.OctahedronGeometry(.14),guideMat,10);guideMesh.name='pearl-path';guideMesh.frustumCulled=false;guideMesh.count=0;for(let i=0;i<10;i++)guideMesh.setColorAt(i,guideColor.setScalar(1));guideMesh.instanceMatrix.setUsage(T.DynamicDrawUsage);guide.add(guideMesh);
   let guideClock=0,guideRecomputes=0,guideFrom=-1,guideTo=-1,guideIds=[];const guidePoints=[];
@@ -84,6 +87,7 @@ try{
     // Circuit and video dialogs use DOM animation; keep the expensive city frame still behind them.
     if(document.querySelector('dialog[open]')){last=now;return;}
     const gameDt=Math.min((now-last)/1000,.25),dt=Math.min(gameDt,.05);last=now;elapsed+=dt;
+    if(arrival){arrival.update(gameDt);world.setMoving(0);game?.update(gameDt,false);world.update(elapsed,dt,stage,reduceMotion);drawFrame(now);return;}
     if(flight){if(viewpoint==='fox'){const dx=world.hero.position.x-flight.t.x,dz=world.hero.position.z-flight.t.z;flight.t.x+=dx;flight.t.z+=dz;flight.p.x+=dx;flight.p.z+=dz;}const t=Math.min(1,(now-flight.start)/(viewpoint==='fox'?650:1800)),u=t*t*(3-2*t);camera.position.lerpVectors(flight.from,flight.p,u);controls.target.lerpVectors(flight.target,flight.t,u);if(t===1)flight=null;}
     const input=movement.read(),distanceBefore=walkDistance,previousX=world.hero.position.x,previousZ=world.hero.position.z;let moving=false;
     if(input.x||input.y){
@@ -119,11 +123,12 @@ try{
       const dx=camera.position.x-world.hero.position.x,dz=camera.position.z-world.hero.position.z,distance=Math.hypot(dx,dz),angle=Math.atan2(dx,dz),safe=safeFollowAngle(world.hero.position.x,world.hero.position.z,angle,distance);
       if(Math.abs(safe-angle)>.00001){camera.position.x=world.hero.position.x+Math.sin(safe)*distance;camera.position.z=world.hero.position.z+Math.cos(safe)*distance;camera.lookAt(controls.target);}
     }
-    game?.update(gameDt,moving||walking.length>0,{looking:now<lookUntil});world.update(elapsed,dt,stage,reduceMotion);updateGuide(dt);if(quality==='light'&&now-lastShadow>=1000/12){renderer.shadowMap.needsUpdate=true;lastShadow=now;}scene.updateMatrixWorld();scene.matrixWorldAutoUpdate=false;renderer.info.reset();const start=performance.now();composer.render();renderTime+=performance.now()-start;frameCount++;
+    game?.update(gameDt,moving||walking.length>0,{looking:now<lookUntil});world.update(elapsed,dt,stage,reduceMotion);updateGuide(dt);drawFrame(now);
   }
+  function drawFrame(now){if(quality==='light'&&now-lastShadow>=1000/12){renderer.shadowMap.needsUpdate=true;lastShadow=now;}scene.updateMatrixWorld();scene.matrixWorldAutoUpdate=false;renderer.info.reset();const start=performance.now();composer.render();renderTime+=performance.now()-start;frameCount++;}
   const initial=new URLSearchParams(location.search).get('stage');setStage(previewMode?(initial!==null&&/^[012]$/.test(initial)?+initial:2):0,{instant:true});
   if(!previewMode){document.body.classList.add('playing');$('#mission').hidden=false;$('#restart-game').hidden=false;$('#explore-controls').hidden=false;game=createGame(world,{travel,resume,goView,project,reduceMotion});}
-  window.__festival={ready:false,setStage:(s)=>setStage(s,{instant:true}),goView:(s)=>goView(s,true),getState:()=>({game:game?.state,carousel:world.carousel.state,festival:world.festival.state,stage,current:world.current,viewpoint,camera:camera.position.toArray(),cameraTarget:controls.target.toArray(),guideVisible:guide.visible,guideRecomputes,guidePoints:guideDots.filter(p=>p.visible).map(p=>p.position.toArray()),quality,hero:world.hero.position.toArray(),heroGroundOffset:new T.Box3().setFromObject(world.hero,true).min.y-world.hero.position.y,walking:walking.length,walkDistance,frames:frameCount,averageRenderMs:renderTime/Math.max(1,frameCount),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,gardens:world.gardenStats,character:world.hero.userData.asset,gait:world.hero.userData.gait,hip:world.hero.getObjectByName('mixamorigHips')?.getWorldPosition(new T.Vector3()).toArray(),contextLost,reflection:!!world.water.material.uniforms.mirrorSampler.value}),projectNode:i=>{const p=world.nodes[i].clone().project(camera);return {x:(p.x+1)/2*innerWidth,y:(1-p.y)/2*innerHeight};},stations:world.missionSites.map((s,i)=>({name:String(i+1),node:s.node})),edges:world.edges,walkRadii:world.nodes.map(p=>p.walkRadius),plazas:world.plazas,obstacles:world.obstacles,nodes:world.nodes.map(p=>p.toArray())};
-  await world.festival.prepare(renderer,camera);composer.render();window.__festival.ready=true;requestAnimationFrame(frame);last=performance.now();$('#loading').classList.add('loaded');setTimeout(()=>$('#loading').hidden=true,850);
+  window.__festival={ready:false,setStage:(s)=>setStage(s,{instant:true}),goView:(s)=>goView(s,true),getState:()=>({arrival:arrival?{elapsed:arrival.elapsed}:null,game:game?.state,carousel:world.carousel.state,festival:world.festival.state,stage,current:world.current,viewpoint,camera:camera.position.toArray(),cameraTarget:controls.target.toArray(),guideVisible:guide.visible,guideRecomputes,guidePoints:guideDots.filter(p=>p.visible).map(p=>p.position.toArray()),quality,hero:world.hero.position.toArray(),heroGroundOffset:new T.Box3().setFromObject(world.hero,true).min.y-world.hero.position.y,walking:walking.length,walkDistance,frames:frameCount,averageRenderMs:renderTime/Math.max(1,frameCount),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,gardens:world.gardenStats,character:world.hero.userData.asset,gait:world.hero.userData.gait,hip:world.hero.getObjectByName('mixamorigHips')?.getWorldPosition(new T.Vector3()).toArray(),contextLost,reflection:!!world.water.material.uniforms.mirrorSampler.value}),projectNode:i=>{const p=world.nodes[i].clone().project(camera);return {x:(p.x+1)/2*innerWidth,y:(1-p.y)/2*innerHeight};},stations:world.missionSites.map((s,i)=>({name:String(i+1),node:s.node})),edges:world.edges,walkRadii:world.nodes.map(p=>p.walkRadius),plazas:world.plazas,obstacles:world.obstacles,nodes:world.nodes.map(p=>p.toArray())};
+  await world.festival.prepare(renderer,camera);if(!previewMode&&!reduceMotion)arrival=createArrival(scene,renderer,camera,controls,world.hero,()=>{arrival=null;goView('fox',true);updateGuide(0);});else updateGuide(0);composer.render();window.__festival.ready=true;requestAnimationFrame(frame);last=performance.now();$('#loading').classList.add('loaded');setTimeout(()=>$('#loading').hidden=true,850);
 }catch(error){console.error(error);fail('3D 화면을 준비하지 못했어요. 최신 Chrome 또는 Edge에서 로컬 실행 주소를 다시 열어 주세요.');}
 
