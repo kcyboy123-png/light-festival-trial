@@ -1,4 +1,4 @@
-import {bulbArt,cellArt,switchArt} from './circuit-art.js?v=trial-20261119-11';
+import {bulbArt,cellArt,switchArt} from './circuit-art.js?v=trial-20261119-12';
 import {compareBrightness,correctObservation} from './series-model.js';
 import {createProgressHelp} from './progress-help.js';
 export function createSeriesPanel(onChange,onComplete){

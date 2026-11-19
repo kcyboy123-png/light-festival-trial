@@ -1,8 +1,8 @@
-import {studioBulb,diagramBulb,diagramSwitch} from './diagram-art.js?v=trial-20261119-11';
-import {labScene} from './lab-art.js?v=trial-20261119-11';
-import {LABS,CIRCUIT_QUESTIONS,LAB_QUESTIONS,circuitKey,labState,labPassed,labHint} from './inquiry-model.js?v=trial-20261119-11';
-import {MISSIONS,simulate,freshDraft} from './mission-model.js?v=trial-20261119-11';
-import {bulbArt,compactCell} from './circuit-art.js?v=trial-20261119-11';
+import {studioBulb,diagramBulb,diagramSwitch} from './diagram-art.js?v=trial-20261119-12';
+import {labScene} from './lab-art.js?v=trial-20261119-12';
+import {LABS,CIRCUIT_QUESTIONS,LAB_QUESTIONS,circuitKey,labState,labPassed,labHint} from './inquiry-model.js?v=trial-20261119-12';
+import {MISSIONS,simulate,freshDraft} from './mission-model.js?v=trial-20261119-12';
+import {bulbArt,compactCell} from './circuit-art.js?v=trial-20261119-12';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}

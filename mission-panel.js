@@ -1,9 +1,9 @@
-import {studioBulb,diagramBulb,diagramSwitch} from './diagram-art.js?v=trial-20261119-11';
-import {createLearningPanel} from './learning-panel.js?v=trial-20261119-11';
-import {hasEvidence} from './inquiry-model.js?v=trial-20261119-11';
-import {MISSIONS,freshDraft,checkMission,simulate,shortWireIndices} from './mission-model.js?v=trial-20261119-11';
-import {bulbArt,compactCell,compactSwitch} from './circuit-art.js?v=trial-20261119-11';
-import {BRIEFS,nextHint,diagnosis,experiments,observationText,OBJECTIVES} from './mission-guide.js?v=trial-20261119-11';
+import {studioBulb,diagramBulb,diagramSwitch} from './diagram-art.js?v=trial-20261119-12';
+import {createLearningPanel} from './learning-panel.js?v=trial-20261119-12';
+import {hasEvidence} from './inquiry-model.js?v=trial-20261119-12';
+import {MISSIONS,freshDraft,checkMission,simulate,shortWireIndices} from './mission-model.js?v=trial-20261119-12';
+import {bulbArt,compactCell,compactSwitch} from './circuit-art.js?v=trial-20261119-12';
+import {BRIEFS,nextHint,diagnosis,experiments,observationText,OBJECTIVES} from './mission-guide.js?v=trial-20261119-12';
 
 const copy=d=>JSON.parse(JSON.stringify(d));
 export function createMissionPanel({onChange,onComplete,onClose}){
@@ -57,7 +57,7 @@ export function createMissionPanel({onChange,onComplete,onClose}){
       const pins=part.classList.contains('lamp-part')?[[32,100],[228,100]]:part.classList.contains('switch-part')?[[10,42],[170,42]]:part.classList.contains('material-part')?[[10,18],[170,18]]:draft.cells===2?[[7,41],[231,41]]:[[68,41],[172,41]];
       return [...part.querySelectorAll('[data-port]')].map((port,j)=>{const p=point(port.dataset.port),v=svg.createSVGPoint();[v.x,v.y]=pins[j];const q=v.matrixTransform(svg.getScreenCTM());return `<path class="component-lead" d="M${p.x} ${p.y}V${q.y-rect.y}H${q.x-rect.x}"/>`;}).join('');
     }).join(''):'';
-    wires.innerHTML=leads+draft.wires.map(([a,b],i)=>{const p=point(a),q=point(b),px=p.x+p.side*34,qx=q.x+q.side*34,same=Math.abs(p.top-q.top)<30,mid=same?Math.max(p.bottom,q.bottom)+22+(i%4)*7:((p.top<q.top?p.bottom:q.bottom)+(p.top<q.top?q.top:p.top))/2+(i%3-1)*8;const intermediate=!same&&partRects.some(r=>r.top>Math.min(p.top,q.top)+15&&r.bottom<Math.max(p.bottom,q.bottom)-15);const lane=p.side<0?12:rect.width-12,down=p.top<q.top,py=down?p.bottom+20:p.top-20,qy=down?q.top-20:q.bottom+20;const path=intermediate?`M${p.x} ${p.y}H${px}V${py}H${lane}V${qy}H${qx}V${q.y}H${q.x}`:`M${p.x} ${p.y}H${px}V${mid}H${qx}V${q.y}H${q.x}`;return `<g data-wire="${i}" class="${(wireFocus===i||selected&&(a===selected||b===selected))?'wire-selected':''}"><path class="wire-bed" d="${path}"/><path class="wire-thread" style="--wire-color:${(index<4||inspected||hintLevel>0)&&shortWireIndices(m,draft).includes(i)?'#f39786':a==='p'||b==='p'?'#b86c52':a==='n'||b==='n'?'#427eaa':'#408c83'}" d="${path}"/><path class="wire-hit" d="${path}"/></g>`;}).join('');
+    wires.innerHTML=leads+draft.wires.map(([a,b],i)=>{const p=point(a),q=point(b),px=p.x+p.side*34,qx=q.x+q.side*34,same=Math.abs(p.top-q.top)<30,mid=same?Math.max(p.bottom,q.bottom)+12+(i%3)*5:((p.top<q.top?p.bottom:q.bottom)+(p.top<q.top?q.top:p.top))/2+(i%3-1)*8;const intermediate=!same&&partRects.some(r=>r.top>Math.min(p.top,q.top)+15&&r.bottom<Math.max(p.bottom,q.bottom)-15);const lane=p.side<0?12:rect.width-12,down=p.top<q.top,py=down?p.bottom+20:p.top-20,qy=down?q.top-20:q.bottom+20;const path=intermediate?`M${p.x} ${p.y}H${px}V${py}H${lane}V${qy}H${qx}V${q.y}H${q.x}`:`M${p.x} ${p.y}H${px}V${mid}H${qx}V${q.y}H${q.x}`;return `<g data-wire="${i}" class="${(wireFocus===i||selected&&(a===selected||b===selected))?'wire-selected':''}"><path class="wire-bed" d="${path}"/><path class="wire-thread" style="--wire-color:${(index<4||inspected||hintLevel>0)&&shortWireIndices(m,draft).includes(i)?'#f39786':a==='p'||b==='p'?'#b86c52':a==='n'||b==='n'?'#427eaa':'#408c83'}" d="${path}"/><path class="wire-hit" d="${path}"/></g>`;}).join('');
     wires.querySelectorAll('[data-wire]').forEach(g=>g.addEventListener('click',()=>{if(erasing)edit(()=>draft.wires.splice(+g.dataset.wire,1),false);else{wireFocus=+g.dataset.wire;selected=null;updateView();drawWires();}}));
   }
 

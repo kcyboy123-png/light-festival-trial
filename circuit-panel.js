@@ -1,4 +1,4 @@
-import {bulbArt,batteryArt,switchArt} from './circuit-art.js?v=trial-20261119-11';
+import {bulbArt,batteryArt,switchArt} from './circuit-art.js?v=trial-20261119-12';
 import './circuit.js';
 import {evaluateFountain} from './fountain-lamp.js';
 import {createProgressHelp} from './progress-help.js';
