@@ -1,5 +1,5 @@
 // Each SVG owns its materials so closed dialogs never supply another board's paint.
-function materials(p){return `<defs>
+export function materials(p){return `<defs>
  <linearGradient id="${p}-metal" x2="1" y2=".1"><stop stop-color="#344954"/><stop offset=".17" stop-color="#9aafb6"/><stop offset=".34" stop-color="#f2f5e9"/><stop offset=".46" stop-color="#879a9e"/><stop offset=".65" stop-color="#d3ddd4"/><stop offset=".85" stop-color="#4b626b"/><stop offset="1" stop-color="#abb7ac"/></linearGradient>
  <linearGradient id="${p}-gold" x2="0" y2="1"><stop stop-color="#fff0bb"/><stop offset=".16" stop-color="#e3bd71"/><stop offset=".45" stop-color="#95612e"/><stop offset=".58" stop-color="#f3d68b"/><stop offset=".8" stop-color="#aa773d"/><stop offset="1" stop-color="#634322"/></linearGradient>
  <linearGradient id="${p}-enamel" x2=".2" y2="1"><stop stop-color="#467b7e"/><stop offset=".08" stop-color="#284e55"/><stop offset=".5" stop-color="#163940"/><stop offset="1" stop-color="#0a202b"/></linearGradient>
@@ -11,6 +11,12 @@ function materials(p){return `<defs>
  </defs>`;}
 function screw(p,x,y){return `<g><circle cx="${x}" cy="${y}" r="4.2" fill="#06141b"/><circle cx="${x}" cy="${y-1}" r="3.3" fill="url(#${p}-metal)"/><path d="M${x-1.8} ${y-2}l3.6 2" stroke="#324b51" stroke-width="1.1"/></g>`;}
 function mount(p,x,y,w,h){return `<ellipse cx="${x+w/2}" cy="${y+h+7}" rx="${w/2+3}" ry="10" fill="#020a11" opacity=".65"/><rect x="${x}" y="${y+7}" width="${w}" height="${h}" rx="11" fill="#071923" stroke="#b69860" stroke-width="1.2"/><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="11" fill="url(#${p}-enamel)" stroke="#81aaa5" stroke-width="1"/><path d="M${x+12} ${y+3}H${x+w-12}" stroke="#b1d0bb" opacity=".4"/>${screw(p,x+12,y+h-10)}${screw(p,x+w-12,y+h-10)}`;}
+
+export function compactCell(p,x,y,w,h,positiveLeft=true){
+ const plus=positiveLeft?x+w*.15:x+w*.85,minus=positiveLeft?x+w*.85:x+w*.15;
+ return `${materials(p)}<g class="precision-cell" data-positive-left="${positiveLeft}"><ellipse cx="${x+w/2}" cy="${y+h+4}" rx="${w*.49}" ry="${h*.12}" fill="#193847" opacity=".16"/><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h*.22}" fill="url(#${p}-cell)" stroke="#976b51" stroke-width="1"/><rect x="${positiveLeft?x+w*.72:x}" y="${y}" width="${w*.28}" height="${h}" rx="${h*.2}" fill="url(#${p}-metal)"/><path d="M${positiveLeft?x+w*.72:x+w*.28} ${y+1}V${y+h-1}" stroke="#f6dfb3" stroke-width="2"/><rect x="${positiveLeft?x-5:x+w-1}" y="${y+h*.32}" width="6" height="${h*.36}" rx="2" fill="url(#${p}-gold)" stroke="#9b7c49"/><path d="M${x+9} ${y+h*.17}H${x+w-9}" stroke="#fff6dd" stroke-width="1.3" opacity=".6"/><text x="${plus}" y="${y+h*.65}" text-anchor="middle" style="fill:#fff5dc;font-size:${h*.45}px;font-weight:800">+</text><text x="${minus}" y="${y+h*.65}" text-anchor="middle" style="fill:#193c49;font-size:${h*.45}px;font-weight:800">−</text><text x="${x+w*.48}" y="${y+h*.6}" text-anchor="middle" style="fill:#fff9e9;font-size:${h*.25}px;font-weight:700">1.5 V</text></g>`;
+}
+export function compactSwitch(p,on){return `${materials(p)}<ellipse cx="90" cy="53" rx="76" ry="6" fill="#163644" opacity=".18"/><rect x="10" y="31" width="160" height="23" rx="9" fill="url(#${p}-ivory)" stroke="#7b999e"/><path d="M22 42H158" stroke="#688b91" stroke-width="4"/>${[30,150].map(x=>`<circle cx="${x}" cy="42" r="9" fill="url(#${p}-gold)" stroke="#886332"/><circle cx="${x}" cy="42" r="3" fill="#f7efca"/>`).join('')}<path d="M30 42L${on?'150 42':'127 9'}" stroke="#5e7074" stroke-width="10" stroke-linecap="round"/><path d="M30 40L${on?'150 40':'127 7'}" stroke="url(#${p}-metal)" stroke-width="6" stroke-linecap="round"/><rect x="${on?104:90}" y="${on?31:7}" width="27" height="12" rx="5" fill="url(#${p}-enamel)" stroke="#658b8c"/>`;}
 
 export function bulbArt(p,insertId=''){
  const glass='M105 145C105 122 72 110 72 72C72-3 188-3 188 72C188 110 155 122 155 145Z';
