@@ -1,6 +1,7 @@
-import {MISSIONS as OLD,restoreTenProgress as restoreOld} from './legacy-mission-model.js?v=trial-20261119-13';
-import {LABS,freshLab,validLab,labPassed,hasEvidence} from './inquiry-model.js?v=trial-20261119-13';
-import {restoreTenProgress as restorePrevious} from './legacy-curriculum-model.js?v=trial-20261119-13';
+import {MISSIONS as OLD,restoreTenProgress as restoreOld} from './legacy-mission-model.js?v=trial-20261120-1';
+import {LABS,freshLab,validLab,labPassed,hasEvidence} from './inquiry-model.js?v=trial-20261120-1';
+import {restoreTenProgress as restorePrevious} from './legacy-curriculum-model.js?v=trial-20261120-1';
+import {validScore} from './score.js?v=trial-20261120-1';
 export const TEN_SAVE_KEY='changyong-light-festival-ten-v2';
 
 export const MISSIONS=[...OLD.slice(0,6),
@@ -73,18 +74,18 @@ export function checkMission(m,d){
   return {passed,checks,message,result};
 }
 
-export const freshTenProgress=()=>({version:4,completed:0,legacyCompleted:0,drafts:MISSIONS.map(freshDraft)});
+export const freshTenProgress=()=>({version:4,completed:0,legacyCompleted:0,drafts:MISSIONS.map(freshDraft),score:{from:0,wrong:[]}});
 export function restoreTenProgress(raw){
   if(typeof raw!=='string'||raw.length>60000)return null;
   try{
     const s=JSON.parse(raw);
     if(s?.version===2||s?.version===3){const old=restorePrevious(raw);if(!old)return null;
       const next=freshTenProgress();next.legacyCompleted=Math.max(old.completed,old.legacyCompleted);next.completed=Math.min(old.completed,6);
-      for(let i=0;i<6;i++)next.drafts[i]=old.drafts[i];return next;
+      next.score.from=next.completed;for(let i=0;i<6;i++)next.drafts[i]=old.drafts[i];return next;
     }
     if(s?.version!==4||!Number.isInteger(s.completed)||s.completed<0||s.completed>10||!Number.isInteger(s.legacyCompleted)||s.legacyCompleted<0||s.legacyCompleted>10||!Array.isArray(s.drafts)||s.drafts.length!==10)return null;
     if(s.drafts.some((d,i)=>!validDraft(MISSIONS[i],d)||(i<s.completed&&!(i<4&&i<s.legacyCompleted?checkMission(MISSIONS[i],d).passed:checkCompletion(i,d)))))return null;
-    return {version:4,completed:s.completed,legacyCompleted:s.legacyCompleted,drafts:structuredClone(s.drafts)};
+    return {version:4,completed:s.completed,legacyCompleted:s.legacyCompleted,drafts:structuredClone(s.drafts),...(s.score===undefined?{}:{score:validScore(s.score,s.completed)?structuredClone(s.score):{from:s.completed,wrong:[]}})};
   }catch{return null;}
 }
 

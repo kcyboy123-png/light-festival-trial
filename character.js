@@ -1,6 +1,6 @@
 import * as T from 'three';
-import {loadModel} from './load-model.js';
-import {softenStarfox} from './fox-face.js?v=trial-20261119-3';
+import {loadModel} from './load-model.js?v=trial-20261120-1';
+import {softenStarfox} from './fox-face.js?v=trial-20261120-1';
 
 export async function createStarfox(renderer) {
   const gltf=await loadModel('./assets/starfox.glb');

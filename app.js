@@ -5,13 +5,13 @@ import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
-import {createWorld} from './world.js?v=trial-20261119-4';
-import {nearestNode,route,walkStep,canTraverse} from './navigation.js';
-import {createExplorationInput} from './exploration-input.js';
-import {createGame} from './game.js?v=trial-20261119-13';
-import {safeFollowAngle} from './camera-follow.js';
-import {initialQuality} from './quality-policy.js';
-import {createArrival} from './arrival.js?v=trial-20261119-4';
+import {createWorld} from './world.js?v=trial-20261120-1';
+import {nearestNode,route,walkStep,canTraverse} from './navigation.js?v=trial-20261120-1';
+import {createExplorationInput} from './exploration-input.js?v=trial-20261120-1';
+import {createGame} from './game.js?v=trial-20261120-1';
+import {safeFollowAngle} from './camera-follow.js?v=trial-20261120-1';
+import {initialQuality} from './quality-policy.js?v=trial-20261120-1';
+import {createArrival} from './arrival.js?v=trial-20261120-1';
 
 const previewMode=new URLSearchParams(location.search).get('preview')==='1';
 const $=s=>document.querySelector(s),canvas=$('#scene'),reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -35,11 +35,33 @@ try{
   poses.bridgeReveal={p:[-10,9,6],t:[-11,3,-5]};
   const fountainStand=world.nodes[world.stations[2].node];poses.fountainLamp={p:[fountainStand.x+2,fountainStand.y+5,fountainStand.z+8],t:[fountainStand.x-.6,fountainStand.y+1.2,fountainStand.z-.5]};
   poses.fountainReveal={p:[5,7,12],t:[0,5,-8]};
+  let rewardShot=null;
   let viewpoint='entrance',flight=null;const followTarget=new T.Vector3(),followLead=new T.Vector3(),followOffset=new T.Vector3();
   const walkHeading=new T.Vector3(-3.8,0,-7).normalize(),inputForward=new T.Vector3(),lastInput=new T.Vector2();let movingTime=0;
   world.hero.rotation.y=Math.atan2(walkHeading.x,walkHeading.z);
   const followHeight=()=>3+Math.min(2,Math.max(0,((world.hero.userData.baseY||1.2)-1.2)*2));
-  function goView(name,instant=false){const wasFollowing=viewpoint==='fox';viewpoint=name;world.cameraFollowing.value=name==='fox'?1:0;if(!wasFollowing||name!=='fox')lastInput.set(0,0);followLead.set(0,0,0);const pos=world.hero.position;const pose=name==='fox'?{p:[pos.x-walkHeading.x*8,pos.y+1.4+followHeight(),pos.z-walkHeading.z*8],t:[pos.x,pos.y+1.4,pos.z]}:poses[name],p=new T.Vector3(...pose.p),t=new T.Vector3(...pose.t);if(innerHeight>innerWidth)p.sub(t).multiplyScalar(name==='fox'?1.12:1.35).add(t);if(instant||reduceMotion){flight=null;camera.position.copy(p);controls.target.copy(t);controls.update();}else flight={from:camera.position.clone(),target:controls.target.clone(),p,t,start:performance.now()};for(const b of document.querySelectorAll('[data-view]'))b.setAttribute('aria-pressed',String(b.dataset.view===name));}
+  function goView(name,instant=false){if(rewardShot){game?.skipReveal();}const wasFollowing=viewpoint==='fox';viewpoint=name;world.cameraFollowing.value=name==='fox'?1:0;if(!wasFollowing||name!=='fox')lastInput.set(0,0);followLead.set(0,0,0);const pos=world.hero.position;const pose=name==='fox'?{p:[pos.x-walkHeading.x*8,pos.y+1.4+followHeight(),pos.z-walkHeading.z*8],t:[pos.x,pos.y+1.4,pos.z]}:poses[name],p=new T.Vector3(...pose.p),t=new T.Vector3(...pose.t);if(innerHeight>innerWidth)p.sub(t).multiplyScalar(name==='fox'?1.12:1.35).add(t);if(instant||reduceMotion){flight=null;camera.fov=48;camera.updateProjectionMatrix();camera.position.copy(p);controls.target.copy(t);controls.update();}else flight={from:camera.position.clone(),target:controls.target.clone(),fov:camera.fov,p,t,start:performance.now()};for(const b of document.querySelectorAll('[data-view]'))b.setAttribute('aria-pressed',String(b.dataset.view===name));}
+  function showReward(index,t){
+    if(index===null){if(rewardShot){rewardShot=null;controls.enabled=true;document.body.classList.remove('reward-view');goView('fox');}return;}
+    if(reduceMotion)return;
+    if(!rewardShot){
+      flight=null;travel(null);lastInput.set(0,0);
+      const site=world.missionSites[index].position.clone();site.y+=1.6;
+      const focus=index>=8?new T.Vector3(-25,3.6,14):index>=5?new T.Vector3(0,3.4,-8):site;
+      if(index===6)focus.lerp(site,.15);
+      const angle=index>=8?-.2:index===6?1.2:index>=5?.05:Math.atan2(camera.position.x-site.x,camera.position.z-site.z);
+      rewardShot={from:camera.position.clone(),target:controls.target.clone(),site,focus,angle,index};
+      controls.enabled=false;world.cameraFollowing.value=0;document.body.classList.add('reward-view');
+    }
+    rewardShot.progress=t;
+    const r=rewardShot,smooth=x=>{x=T.MathUtils.clamp(x,0,1);return x*x*(3-2*x);};
+    const arrive=smooth(t/.28),sweep=smooth((t-.2)/.8),wide=index===6?12:index>=5?18:10,aspect=innerHeight>innerWidth&&index!==3&&index!==4&&index!==6?1.3:1;
+    const focus=r.site.clone().lerp(r.focus,index>=5?1:sweep),angle=r.angle+sweep*(index>=5&&index<8?-.12:.3);
+    const radius=(wide+sweep*(index===3||index===6?.5:3))*aspect;
+    camera.fov=48+(index===6&&innerHeight>innerWidth?20*smooth(t/.18):0);camera.updateProjectionMatrix();
+    const position=focus.clone().add(new T.Vector3(Math.sin(angle)*radius,5+sweep*2,Math.cos(angle)*radius));
+    camera.position.lerpVectors(r.from,position,arrive);camera.position.y+=Math.sin(arrive*Math.PI)*2;controls.target.lerpVectors(r.target,focus,arrive);camera.lookAt(controls.target);
+  }
   goView(previewMode?'entrance':'fox',true);
   let game=null,arrival=null;let stage=2,walking=[],activeNode=nearestNode(world.nodes,world.hero.position),walkDistance=0;
   const captions=['길 위에 첫 불빛을 밝혀 보세요.','다리가 깨어났어요. 다음은 중앙 광장이에요.','도시 전체에 빛이 돌아왔어요.'];
@@ -70,8 +92,8 @@ try{
   function turn(x,z,dt){const a=Math.atan2(x,z)-world.hero.rotation.y;world.hero.rotation.y+=Math.atan2(Math.sin(a),Math.cos(a))*Math.min(1,dt*12);}
   if(navigator.maxTouchPoints>0)$('#explore-controls p').innerHTML='조이스틱을 밀어 걷기<br>도착하면 회로 고치기';
   const movement=createExplorationInput(()=>previewMode||!!game?.blocked||!!arrival,()=>game?.interact(),()=>game?.hint(),()=>goView('fox'));
-  addEventListener('keydown',e=>{if(arrival&&/^(w|a|s|d|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|Escape)$/i.test(e.key))arrival.finish();},true);
-  addEventListener('pointerdown',e=>{if(arrival&&e.target.closest('#scene,#move-pad'))arrival.finish();},true);
+  addEventListener('keydown',e=>{if(rewardShot&&/^(w|a|s|d|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|Escape)$/i.test(e.key))game.skipReveal();if(arrival&&/^(w|a|s|d|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|Escape)$/i.test(e.key))arrival.finish();},true);
+  addEventListener('pointerdown',e=>{if(rewardShot&&e.target.closest('#scene,#move-pad'))game.skipReveal();if(arrival&&e.target.closest('#scene,#move-pad'))arrival.finish();},true);
   $('#move-pad').addEventListener('pointerdown',e=>{if(e.button===0&&!previewMode&&!game?.blocked)travel(null);});
   const guide=new T.Group();guide.visible=false;scene.add(guide);const guideMat=new T.MeshBasicMaterial({color:0xd5f2e8,transparent:true,opacity:.4,depthWrite:false,toneMapped:false});
   const guideDots=Array.from({length:10},()=>new T.Object3D()),guideColor=new T.Color();
@@ -89,7 +111,8 @@ try{
     if(document.querySelector('dialog[open]')){last=now;return;}
     const gameDt=Math.min((now-last)/1000,.25),dt=Math.min(gameDt,.05);last=now;elapsed+=dt;
     if(arrival){arrival.update(gameDt);world.setMoving(0);game?.update(gameDt,false);world.update(elapsed,dt,stage,reduceMotion);drawFrame(now);return;}
-    if(flight){if(viewpoint==='fox'){const dx=world.hero.position.x-flight.t.x,dz=world.hero.position.z-flight.t.z;flight.t.x+=dx;flight.t.z+=dz;flight.p.x+=dx;flight.p.z+=dz;}const t=Math.min(1,(now-flight.start)/(viewpoint==='fox'?650:1800)),u=t*t*(3-2*t);camera.position.lerpVectors(flight.from,flight.p,u);controls.target.lerpVectors(flight.target,flight.t,u);if(t===1)flight=null;}
+    if(flight){if(viewpoint==='fox'){const dx=world.hero.position.x-flight.t.x,dz=world.hero.position.z-flight.t.z;flight.t.x+=dx;flight.t.z+=dz;flight.p.x+=dx;flight.p.z+=dz;}const t=Math.min(1,(now-flight.start)/(viewpoint==='fox'?650:1800)),u=t*t*(3-2*t);camera.fov=T.MathUtils.lerp(flight.fov,48,u);camera.updateProjectionMatrix();camera.position.lerpVectors(flight.from,flight.p,u);controls.target.lerpVectors(flight.target,flight.t,u);if(t===1)flight=null;}
+    if(!flight&&!rewardShot&&camera.fov!==48){camera.fov=48;camera.updateProjectionMatrix();}
     const input=movement.read(),distanceBefore=walkDistance,previousX=world.hero.position.x,previousZ=world.hero.position.z;let moving=false;
     if(input.x||input.y){
       if(viewpoint!=='fox')goView('fox');walking=[];
@@ -107,7 +130,7 @@ try{
     movingTime=moving||walking.length?movingTime+dt:0;
     if(moving)walkHeading.set(world.hero.position.x-previousX,0,world.hero.position.z-previousZ).normalize();
     world.setMoving(dt>0?(walkDistance-distanceBefore)/(dt*3.6):0);
-    if(viewpoint==='fox'&&!flight){
+    if(viewpoint==='fox'&&!flight&&!rewardShot){
       const autoTurn=moving&&movingTime>.3&&!reduceMotion&&!game?.blocked&&pointers.size===0&&now>=lookUntil;
       followLead.lerp(autoTurn?followTarget.copy(walkHeading).multiplyScalar(.8):followTarget.set(0,0,0),1-Math.exp(-dt*3));
       followTarget.copy(world.hero.position).add(followLead);followTarget.y=(world.hero.userData.baseY||1.2)+1.4;
@@ -119,8 +142,8 @@ try{
         camera.position.set(controls.target.x+Math.sin(next)*radius,controls.target.y+T.MathUtils.damp(followOffset.y,radius*followHeight()/8,3,dt),controls.target.z+Math.cos(next)*radius);
       }
     }
-    controls.update();
-    if(viewpoint==='fox'){
+    if(!rewardShot)controls.update();
+    if(viewpoint==='fox'&&!rewardShot){
       const dx=camera.position.x-world.hero.position.x,dz=camera.position.z-world.hero.position.z,distance=Math.hypot(dx,dz),angle=Math.atan2(dx,dz),safe=safeFollowAngle(world.hero.position.x,world.hero.position.z,angle,distance);
       if(Math.abs(safe-angle)>.00001){camera.position.x=world.hero.position.x+Math.sin(safe)*distance;camera.position.z=world.hero.position.z+Math.cos(safe)*distance;camera.lookAt(controls.target);}
     }
@@ -128,8 +151,8 @@ try{
   }
   function drawFrame(now){if(quality==='light'&&now-lastShadow>=1000/12){renderer.shadowMap.needsUpdate=true;lastShadow=now;}scene.updateMatrixWorld();scene.matrixWorldAutoUpdate=false;renderer.info.reset();const start=performance.now();composer.render();renderTime+=performance.now()-start;frameCount++;}
   const initial=new URLSearchParams(location.search).get('stage');setStage(previewMode?(initial!==null&&/^[012]$/.test(initial)?+initial:2):0,{instant:true});
-  if(!previewMode){document.body.classList.add('playing');$('#mission').hidden=false;$('#restart-game').hidden=false;$('#explore-controls').hidden=false;game=createGame(world,{travel,resume,goView,project,reduceMotion});}
-  window.__festival={ready:false,setStage:(s)=>setStage(s,{instant:true}),goView:(s)=>goView(s,true),getState:()=>({arrival:arrival?{elapsed:arrival.elapsed}:null,game:game?.state,carousel:world.carousel.state,festival:world.festival.state,stage,current:world.current,viewpoint,camera:camera.position.toArray(),cameraTarget:controls.target.toArray(),guideVisible:guide.visible,guideRecomputes,guidePoints:guideDots.filter(p=>p.visible).map(p=>p.position.toArray()),quality,hero:world.hero.position.toArray(),heroHeading:world.hero.rotation.y,heroGroundOffset:new T.Box3().setFromObject(world.hero,true).min.y-world.hero.position.y,walking:walking.length,walkDistance,frames:frameCount,averageRenderMs:renderTime/Math.max(1,frameCount),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,gardens:world.gardenStats,character:world.hero.userData.asset,gait:world.hero.userData.gait,hip:world.hero.getObjectByName('mixamorigHips')?.getWorldPosition(new T.Vector3()).toArray(),contextLost,reflection:!!world.water.material.uniforms.mirrorSampler.value}),projectNode:i=>{const p=world.nodes[i].clone().project(camera);return {x:(p.x+1)/2*innerWidth,y:(1-p.y)/2*innerHeight};},stations:world.missionSites.map((s,i)=>({name:String(i+1),node:s.node})),edges:world.edges,walkRadii:world.nodes.map(p=>p.walkRadius),plazas:world.plazas,obstacles:world.obstacles,nodes:world.nodes.map(p=>p.toArray())};
+  if(!previewMode){document.body.classList.add('playing');$('#mission').hidden=false;$('#restart-game').hidden=false;$('#explore-controls').hidden=false;game=createGame(world,{travel,resume,goView,project,reduceMotion,showReward});}
+  window.__festival={ready:false,setStage:(s)=>setStage(s,{instant:true}),goView:(s)=>goView(s,true),getState:()=>({cameraFollowing:world.cameraFollowing.value,cameraFov:camera.fov,rewardCamera:rewardShot?{index:rewardShot.index,progress:rewardShot.progress}:null,arrival:arrival?{elapsed:arrival.elapsed}:null,game:game?.state,carousel:world.carousel.state,festival:world.festival.state,stage,current:world.current,viewpoint,camera:camera.position.toArray(),cameraTarget:controls.target.toArray(),guideVisible:guide.visible,guideRecomputes,guidePoints:guideDots.filter(p=>p.visible).map(p=>p.position.toArray()),quality,hero:world.hero.position.toArray(),heroHeading:world.hero.rotation.y,heroGroundOffset:new T.Box3().setFromObject(world.hero,true).min.y-world.hero.position.y,walking:walking.length,walkDistance,frames:frameCount,averageRenderMs:renderTime/Math.max(1,frameCount),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,gardens:world.gardenStats,character:world.hero.userData.asset,gait:world.hero.userData.gait,hip:world.hero.getObjectByName('mixamorigHips')?.getWorldPosition(new T.Vector3()).toArray(),contextLost,reflection:!!world.water.material.uniforms.mirrorSampler.value}),projectNode:i=>{const p=world.nodes[i].clone().project(camera);return {x:(p.x+1)/2*innerWidth,y:(1-p.y)/2*innerHeight};},stations:world.missionSites.map((s,i)=>({name:String(i+1),node:s.node})),edges:world.edges,walkRadii:world.nodes.map(p=>p.walkRadius),plazas:world.plazas,obstacles:world.obstacles,nodes:world.nodes.map(p=>p.toArray())};
   await world.festival.prepare(renderer,camera);if(!previewMode&&!reduceMotion)arrival=createArrival(scene,renderer,camera,controls,world.hero,()=>{arrival=null;goView('fox',true);updateGuide(0);});else updateGuide(0);composer.render();window.__festival.ready=true;requestAnimationFrame(frame);last=performance.now();$('#loading').classList.add('loaded');setTimeout(()=>$('#loading').hidden=true,850);
 }catch(error){console.error(error);fail('3D 화면을 준비하지 못했어요. 최신 Chrome 또는 Edge에서 로컬 실행 주소를 다시 열어 주세요.');}
 

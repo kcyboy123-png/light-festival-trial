@@ -1,4 +1,4 @@
-import {materials,compactCell,bulbArt} from './circuit-art.js?v=trial-20261119-13';
+import {materials,compactCell,bulbArt} from './circuit-art.js?v=trial-20261120-1';
 
 const wire=(d)=>`<path d="${d}" fill="none" stroke="#688e97" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="#c1e0d9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
 const caption=(x,y,text)=>`<text x="${x}" y="${y}" text-anchor="middle" class="scene-label">${text}</text>`;

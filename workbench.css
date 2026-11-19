@@ -1,0 +1,289 @@
+/* One task, one working surface. Optional controls never push the circuit away. */
+#work-dialog.simple-workbench,#learning-dialog.simple-learning{-webkit-tap-highlight-color:transparent}
+#work-dialog.simple-workbench{box-sizing:border-box;width:min(1040px,calc(100vw - 24px));padding:18px 22px;max-height:calc(100dvh - 24px);overflow:auto;scroll-padding:80px 0 110px;background:#102833}
+#work-dialog.simple-workbench [hidden]{display:none!important}
+#work-dialog.simple-workbench .work-heading{position:sticky;top:-18px;margin:0;padding:0 0 8px;background:#102833;z-index:7}
+#work-dialog.simple-workbench .work-heading>div{display:flex;gap:14px;align-items:baseline}
+#work-dialog.simple-workbench #work-step{margin:0;font-size:13px;color:#a5c2be;white-space:nowrap}
+#work-dialog.simple-workbench h2{margin:0;font-size:24px}
+#work-dialog.simple-workbench #work-goal{display:block;position:static;width:auto;height:auto;overflow:visible;clip-path:none;white-space:normal;margin:2px 0 16px;font-size:19px;line-height:1.45;color:#f4dfae;font-weight:700}
+#work-dialog.simple-workbench #work-board{padding:22px 34px 76px;margin:0;background:#e7efeb;border-radius:16px}
+#work-dialog.simple-workbench #work-parts{grid-template-rows:none;row-gap:90px;column-gap:60px}
+@media(min-width:700px) and (min-height:600px) and (max-height:850px){
+ #work-dialog.simple-workbench #work-board[data-switches="2"] #work-parts{row-gap:60px}
+}
+#work-dialog.simple-workbench .work-part{box-shadow:none}
+#work-dialog.simple-workbench .work-part h3{font-size:14px;margin:0 0 6px}
+#work-dialog.simple-workbench .work-bulb{height:122px;max-width:170px}
+#work-dialog.simple-workbench .work-cells{height:65px}
+#work-dialog.simple-workbench .work-switch{min-height:64px}
+#work-dialog.simple-workbench .work-switch svg{height:38px}
+#work-dialog.simple-workbench .work-switch span{font-size:12px}
+#work-dialog.simple-workbench .cell-junction{font-size:11px;margin:4px 0}
+#work-dialog.simple-workbench .cell-actions button{min-height:44px;font-size:12px}
+#work-dialog.simple-workbench .lamp-status{font-size:12px;min-width:0;padding:3px 12px}
+#work-dialog.simple-workbench .connect-point{height:52px;min-height:52px;width:60px;min-width:48px}
+#work-dialog.simple-workbench .port-action{font-size:10px}
+#work-dialog.simple-workbench .work-bottom-bar{position:sticky;bottom:-18px;background:#102833;padding-top:8px;z-index:6}
+#work-dialog.simple-workbench .message-bar{display:flex;align-items:center;gap:10px;margin:0;padding:6px 0;min-height:0;background:none;border:0}
+#work-dialog.simple-workbench #work-message{font-size:14px;margin:0;min-height:0;line-height:1.4;color:#c5dbd6;flex:1}
+#work-dialog.simple-workbench .message-bar button{min-height:44px;flex:none}
+#work-dialog.simple-workbench .work-actions{position:static;display:flex;flex-wrap:nowrap;gap:8px;padding:4px 0 0;margin:0;background:none}
+#work-dialog.simple-workbench .work-actions button{min-height:48px;padding:0 14px;font-size:14px;border-radius:11px}
+#work-dialog.simple-workbench .work-actions button:disabled{cursor:default}
+#work-dialog.simple-workbench #work-undo{min-width:48px;width:48px;padding:0;font-size:26px}
+#work-dialog.simple-workbench #work-undo{display:flex;flex-direction:column;align-items:center;justify-content:center}
+#work-dialog.simple-workbench #work-undo span{font-size:22px;line-height:23px}
+#work-dialog.simple-workbench #work-undo small{font-size:10px;line-height:14px}
+#work-dialog.simple-workbench:is([data-tutorial=wire],[data-tutorial=switch]) :is(#work-erase,#work-more){display:none}
+#work-dialog.simple-workbench[data-tutorial=switch] :is(#work-hint,#work-undo){display:none}
+#work-dialog.simple-workbench:is([data-tutorial=wire],[data-tutorial=switch]) #work-wires *{pointer-events:none}
+#work-dialog.simple-workbench:is([data-tutorial=wire],[data-tutorial=switch]) .connect-point:disabled{background:none;border-color:transparent;box-shadow:none;opacity:1;outline:none;pointer-events:none}
+#work-dialog.simple-workbench:is([data-tutorial=wire],[data-tutorial=switch]) .connect-point:disabled>*{display:none}
+#work-dialog.simple-workbench:is([data-tutorial=wire],[data-tutorial=switch]) .connect-point:disabled:after{content:'';width:10px;height:10px;border:2px solid #587f77;border-radius:50%;background:#eef5ee}
+#work-dialog.simple-workbench[data-tutorial=switch] .switch-part{cursor:pointer}
+#work-dialog.simple-workbench[data-tutorial=switch] .work-switch{min-height:92px}
+#work-dialog.simple-workbench[data-tutorial=switch] .work-switch span{font-size:17px}
+#work-dialog.simple-workbench #work-test{min-width:150px;margin-left:auto}
+#work-dialog.simple-workbench #work-test:disabled{background:#23454c;color:#a9c3be;border-color:#4d6c70;opacity:1;cursor:default}
+#work-dialog.simple-workbench #work-options{position:absolute;z-index:10;right:22px;bottom:90px;max-height:65%;width:min(440px,calc(100% - 44px));box-sizing:border-box;overflow:auto;background:#153541;border:1px solid #658986;border-radius:16px;padding:18px;box-shadow:0 12px 40px #0008}
+#work-dialog.simple-workbench #work-options-close{display:block;margin:0 0 6px auto;width:44px;min-height:44px;padding:0;font-size:24px}
+#work-dialog.simple-workbench #work-options[data-wire-only=true]{width:min(360px,calc(100% - 44px))}
+#work-dialog.simple-workbench #work-options[data-wire-only=true] :is(.extra-actions,#work-checks,#work-how,#work-note,#work-demo-box){display:none}
+#work-dialog.simple-workbench .extra-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+#work-dialog.simple-workbench #work-options button{min-height:48px;font-size:13px;padding:8px 12px;border-radius:10px}
+#work-dialog.simple-workbench #work-options details{margin:6px 0}
+#work-dialog.simple-workbench #work-options summary{min-height:44px;box-sizing:border-box;padding:10px 0;font-size:14px;cursor:pointer}
+#work-dialog.simple-workbench #work-wire-list{display:grid;gap:6px;padding:4px 0}
+#work-dialog.simple-workbench #work-wire-list button{text-align:left;width:100%}
+#work-dialog.simple-workbench #work-how,#work-dialog.simple-workbench #work-note{font-size:12px;color:#b1c9c5;margin:8px 0 0}
+#work-dialog.simple-workbench #work-experiment{padding:0;margin:0;background:none;border:0}
+#work-dialog.simple-workbench #work-observation{display:flex;align-items:center;gap:8px;border:1px solid #607d75;border-radius:12px;background:#1a3b43;padding:10px 12px;margin:0 0 12px}
+#work-dialog.simple-workbench #work-observation>div{flex:1}
+#work-dialog.simple-workbench #work-observe-title{font-size:14px}
+#work-dialog.simple-workbench #work-observe-result{font-size:13px;margin:2px 0 0}
+#work-dialog.simple-workbench #work-observation button{margin:0;min-height:44px;flex:none;padding:0 14px}
+#work-dialog.simple-workbench #work-observe-close{width:44px;font-size:24px;padding:0}
+#learning-dialog.simple-learning header small{font-size:12px}
+#learning-dialog.simple-learning h2{font-size:22px;margin:0}
+#learning-dialog.simple-learning[data-mode=circuit] #learning-close{font-size:14px;min-width:84px;padding:0 12px;white-space:nowrap}
+#learning-dialog.simple-learning .learning-note{display:none}
+#learning-dialog.simple-learning[data-mission="5"][data-reasoning="false"] .result-grid+.learning-note{display:block;font-size:13px;text-align:center}
+#learning-dialog.simple-learning .result-grid{margin-top:12px;gap:10px}
+#learning-dialog.simple-learning .result-card{padding:10px 8px;box-shadow:none}
+#learning-dialog.simple-learning .result-card .work-bulb{height:100px;margin:4px auto;max-width:130px}
+#learning-dialog.simple-learning .result-card strong{font-size:14px;min-height:0;line-height:1.4}
+#learning-dialog.simple-learning .result-card span{font-size:12px}
+#learning-dialog.simple-learning h3{font-size:19px;line-height:1.4;margin:16px 0 12px}
+#learning-dialog.simple-learning .learning-choices button{min-height:48px;font-size:16px;padding:11px 14px}
+#learning-dialog.simple-learning #learning-feedback{font-size:14px;background:none;padding:6px 0;margin:6px 0}
+#learning-dialog.simple-learning #learning-submit:disabled{background:#23454c;color:#bdd2cc;border-color:#4d6c70;opacity:1;cursor:default}
+@media(max-width:699px){
+ #work-dialog.simple-workbench #work-board[data-mission="0"] .power-part{grid-row:1}
+ #work-dialog.simple-workbench #work-board[data-mission="0"] .lamp-0{grid-row:2}
+ #work-dialog.simple-workbench #work-board[data-mission="1"] .power-part,#work-dialog.simple-workbench #work-board[data-mission="1"] .switch-0{grid-row:1}
+ #work-dialog.simple-workbench #work-board[data-mission="1"] .lamp-0{grid-row:2}
+ #work-dialog.simple-workbench{width:calc(100vw - 12px);max-height:calc(100dvh - 12px);padding:12px}
+ #work-dialog.simple-workbench .work-heading{top:-12px;padding-bottom:6px}
+ #work-dialog.simple-workbench .work-heading>div{gap:8px;flex-wrap:wrap}
+ #work-dialog.simple-workbench h2{font-size:21px}
+ #work-dialog.simple-workbench #work-goal{font-size:16px;margin:0 0 12px}
+ #work-dialog.simple-workbench #work-board{padding:18px 24px 76px}
+ #work-dialog.simple-workbench #work-parts{column-gap:40px;row-gap:90px}
+ #work-dialog.simple-workbench .work-bulb{height:100px}
+ #work-dialog.simple-workbench .work-cells{height:58px}
+ #work-dialog.simple-workbench .connect-point{width:48px}
+ #work-dialog.simple-workbench .work-bottom-bar{bottom:-12px}
+ #work-dialog.simple-workbench .work-actions{gap:5px}
+ #work-dialog.simple-workbench .work-actions button{font-size:12px;padding:0 9px}
+ #work-dialog.simple-workbench #work-test{min-width:96px}
+ #work-dialog.simple-workbench #work-options{right:12px;width:calc(100% - 24px)}
+ #learning-dialog.simple-learning .result-grid{grid-auto-flow:row;grid-template-columns:repeat(2,minmax(0,1fr))}
+ #learning-dialog.simple-learning .result-card .work-bulb{height:78px}
+}
+@media(max-height:500px) and (min-width:700px){
+ #work-dialog.simple-workbench{padding:10px 16px;max-height:calc(100dvh - 12px);scroll-padding-top:65px}
+ #work-dialog.simple-workbench .work-heading{top:-10px;padding:0}
+ #work-dialog.simple-workbench h2{font-size:19px}
+ #work-dialog.simple-workbench #work-goal{font-size:15px;margin:0 0 8px}
+ #work-dialog.simple-workbench #work-board{padding-top:10px}
+ #work-dialog.simple-workbench .work-bottom-bar{bottom:-10px}
+ #work-dialog.simple-workbench #work-options{position:fixed;bottom:70px;max-height:65vh}
+ #learning-dialog.simple-learning .result-card .work-bulb{height:60px}
+ #learning-dialog.simple-learning h3{font-size:16px;margin:8px 0}
+}
+
+/* Quiet surfaces keep wiring and state changes in the foreground. */
+#work-circuit-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;border:0;padding:0;margin:0 0 14px}
+#work-circuit-choices[hidden]{display:none}
+#work-circuit-choices legend{font-size:14px;margin-bottom:7px;color:#f1d99d}
+#work-circuit-choices button{min-height:70px;padding:5px 8px;border:2px solid #9bb6ad;border-radius:13px;background:#edf4ee;color:#355e60;box-shadow:none}
+#work-circuit-choices button[aria-pressed=true]{border-color:#f5cb72;background:#fff1cc;box-shadow:0 0 0 2px #f5cb7255}
+#work-circuit-choices button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+#work-circuit-choices svg{display:block;width:100%;height:118px;overflow:visible}
+#work-circuit-choices text{fill:currentColor;stroke:none;font-size:17px;text-anchor:middle;font-family:inherit;font-weight:700}
+#work-circuit-choices span{display:block;font-size:13px;font-weight:700}
+.reasoning-circuit{margin:10px 0 14px;padding:12px;background:#edf4ee;color:#355e60;border:1px solid #9bb6ad;border-radius:14px}
+.reasoning-circuit figcaption{font-size:13px;color:#745733;text-align:center;margin-bottom:8px}
+.reasoning-circuit svg{display:block;width:100%;height:176px;overflow:visible}
+.reasoning-circuit text{fill:currentColor;stroke:none;font-size:17px;text-anchor:middle;font-family:inherit;font-weight:700}
+.reasoning-circuit .circuit-change{stroke:#a96a12;stroke-width:4;stroke-dasharray:6 3}
+.reasoning-circuit .circuit-change.cut{stroke:#a85540;stroke-dasharray:none;stroke-linecap:round}
+.previous-results{margin:10px 0;border-top:1px solid #597774}
+.previous-results summary{min-height:44px;align-content:center;cursor:pointer;font-size:14px;color:#d5e3dd}
+.previous-results summary:focus-visible{outline:3px solid #f1d99d;outline-offset:3px}
+@media(max-height:600px){.reasoning-circuit svg{height:126px}}
+@media(min-width:700px) and (max-height:500px){
+ .reasoning-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:center}
+ .reasoning-layout .reasoning-circuit{margin:6px 0;padding:8px}
+ .reasoning-layout .reasoning-circuit svg{height:110px}
+}
+#work-dialog.simple-workbench[data-tutorial=choices] :is(#work-erase,#work-more){display:none}
+#work-dialog.simple-workbench[data-tutorial=choices] #work-wires *{pointer-events:none}
+#work-dialog.simple-workbench[data-tutorial=choices] .connect-point:disabled{background:none;border-color:transparent;box-shadow:none;opacity:1;outline:none;pointer-events:none}
+#work-dialog.simple-workbench[data-tutorial=choices] .connect-point:disabled>*{display:none}
+#work-dialog.simple-workbench[data-tutorial=choices] .connect-point:disabled:after{content:'';width:8px;height:8px;border:2px solid #587f77;border-radius:50%;background:#eef5ee}
+#work-dialog.simple-workbench[data-tutorial=choices] #work-board{padding-bottom:28px;padding-top:12px}
+#work-dialog.simple-workbench[data-tutorial=choices] #work-parts{row-gap:20px}
+#work-dialog.simple-workbench[data-tutorial=choices] .work-bulb{height:66px}
+#work-dialog.simple-workbench[data-tutorial=choices] .work-cells{height:46px}
+#work-dialog.simple-workbench[data-tutorial=choices] .switch-part{cursor:pointer}
+#work-dialog.simple-workbench[data-has-choices=true] :is(.connection-ends,#work-wires){display:none}
+#work-dialog.simple-workbench[data-has-choices=true] #work-board #work-parts{row-gap:14px;column-gap:18px}
+#work-dialog.simple-workbench[data-has-choices=true] .work-part{padding-bottom:8px}
+#work-dialog.simple-workbench[data-has-choices=true] #work-board{padding:12px 16px}
+#work-dialog.simple-workbench[data-has-choices=true] .work-switch{min-height:66px}
+#work-dialog.simple-workbench[data-mission="4"] #work-board #work-parts{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:12px}
+#work-dialog.simple-workbench[data-mission="4"] .power-part,#work-dialog.simple-workbench[data-mission="4"] .material-part .diagram-material{display:none}
+#work-dialog.simple-workbench[data-mission="4"] #work-board .material-part{grid-column:1;grid-row:1}
+#work-dialog.simple-workbench[data-mission="4"] #work-board .lamp-part{grid-column:2;grid-row:1}
+#work-dialog.simple-workbench[data-mission="4"] .material-options{width:100%;justify-content:center}
+#work-circuit-choices .material-focus.copper{fill:#cd986c}
+#work-circuit-choices .material-focus.plastic{fill:#c3dce3}
+#work-circuit-choices .material-focus.rubber{fill:#6c7b7e}
+#work-dialog.simple-workbench #work-hint{min-width:44px}
+@media(max-width:699px){#work-circuit-choices{gap:6px}#work-circuit-choices svg{height:94px}#work-circuit-choices button{padding:5px 2px}}
+#work-dialog.simple-workbench #work-board{background:#e9f0ed;border-color:#c4d5ce;box-shadow:inset 0 1px 0 #fff,0 2px 12px #04151b26}
+#work-dialog.simple-workbench #work-board:before{display:none}
+#work-dialog.simple-workbench .work-part{background:#f8faf5;border:1px solid #b8cbc4;border-radius:16px;box-shadow:0 3px 0 #d2ded7,inset 0 1px 0 #fff}
+#work-dialog.simple-workbench .work-part h3{color:#264e55;font-size:15px;font-weight:800}
+#work-dialog.simple-workbench .component-lead{stroke:#6d8e88;stroke-width:3;stroke-linecap:round}
+#work-dialog.simple-workbench .connect-point{background:linear-gradient(#fffef8,#eef3ea);border-color:#6f938b;border-radius:11px;box-shadow:0 3px 0 #aabfb6,inset 0 1px 0 #fff;font-size:14px;transition:border-color .12s;-webkit-tap-highlight-color:transparent}
+#work-dialog.simple-workbench .connect-point.positive{background:linear-gradient(#b87556,#995538);border-color:#82432e;color:#fff9ed;box-shadow:0 3px 0 #693e2d,inset 0 1px 0 #e0ac89}
+#work-dialog.simple-workbench .connect-point.negative{background:linear-gradient(#497c91,#305c73);border-color:#284d62;color:#f7ffff;box-shadow:0 3px 0 #244253,inset 0 1px 0 #82abb8}
+#work-dialog.simple-workbench .connect-point.selected{background:#f5dfa4;color:#344640;border-color:#a47b34;outline:3px solid #d7b568;outline-offset:3px;box-shadow:0 3px 0 #a38953}
+#work-dialog.simple-workbench .connect-point.selected .port-action{font-weight:800}
+#work-dialog.simple-workbench .connect-point.loose-port:not(.selected){border-style:dashed;border-color:#a97b40;background:#fff5db;color:#344e50}
+#work-dialog.simple-workbench .coach-port:not(.coach-start):not(.coach-next):not(.selected){outline:none;box-shadow:0 3px 0 #aabfb6!important}
+#work-dialog.simple-workbench .coach-port:not(.coach-start):not(.coach-next):not(.selected) .coach-number{background:#eff3e8;color:#45675f;box-shadow:0 0 0 2px #7b998f}
+#work-dialog.simple-workbench .show-ports .connect-point,#work-dialog.simple-workbench .show-switch .work-switch{outline:3px solid #b68d3e;outline-offset:3px}
+#work-dialog.simple-workbench .show-material .material-options{outline:3px solid #b68d3e;outline-offset:3px;border-radius:10px}
+#work-dialog.simple-workbench .connect-point:focus-visible{outline:3px solid #b68d3e;outline-offset:4px}
+#work-dialog.simple-workbench .work-cells{position:relative;z-index:3}
+#work-dialog.simple-workbench .cell-polarity{paint-order:stroke fill;stroke-width:1.5px}
+#work-dialog.simple-workbench .cell-plus{stroke:#8e4c33}
+#work-dialog.simple-workbench .cell-minus{stroke:#d6e2dd}
+#work-dialog.simple-workbench .cell-junction{font-size:12px;font-weight:700;color:#3b6659;line-height:1.5}
+#work-dialog.simple-workbench .cell-junction.opposed{color:#965034}
+#work-dialog.simple-workbench .cell-actions button{border-radius:10px;background:#e8efea;color:#294e50;border:1px solid #9db8ae;font-weight:700}
+#work-dialog.simple-workbench .diagram-material{position:relative;z-index:3;max-width:180px;height:42px}
+#work-dialog.simple-workbench .material-options button{border-radius:9px;border:1px solid #8eafb0;background:#eff5f1;color:#315963;font-weight:700}
+#work-dialog.simple-workbench .material-options button[aria-pressed=true]{background:#24555b;color:#fff9e9;border-color:#24555b;box-shadow:0 2px 0 #183c43,inset 0 1px 0 #5c8587}
+#work-dialog.simple-workbench .material-sample{width:20px;height:14px;box-shadow:inset 0 1px 0 #ffffff66}
+#work-dialog.simple-workbench .work-switch{width:calc(100% - 16px);margin:0 8px;border:1px solid #c8cdbb;border-radius:10px;background:#f7f0df;color:#745733}
+#work-dialog.simple-workbench .work-switch[aria-pressed=true]{border-color:#bbd0c4;background:#e4eee4;color:#365c52}
+#work-dialog.simple-workbench .work-switch svg{height:44px;position:relative;z-index:3}
+#work-dialog.simple-workbench .work-switch span{font-weight:700;font-size:12px;line-height:1.6}
+#work-dialog.simple-workbench #work-board[data-preview=true] .work-switch:disabled{opacity:1;cursor:default}
+#work-dialog.simple-workbench #work-board[data-preview=true] .connect-point:disabled{opacity:1;cursor:default}
+#work-dialog.simple-workbench #work-board[data-preview=true] .cell-actions{visibility:hidden}
+.simple-workbench .diagram-switch .switch-lever,.simple-learning .diagram-switch .switch-lever{stroke-width:5;stroke:#b07b3c}
+.simple-workbench .diagram-switch.closed .switch-lever,.simple-learning .diagram-switch.closed .switch-lever{stroke:#36776a}
+.simple-workbench .diagram-switch circle,.simple-learning .diagram-switch circle{fill:#fffdf0;stroke:#416960;stroke-width:3}
+.simple-workbench .diagram-bulb .diagram-halo{opacity:calc(var(--lamp-light,0) * .22)}
+.simple-workbench .diagram-bulb .diagram-halo-inner{opacity:calc(var(--lamp-light,0) * .36)}
+.simple-workbench .lit .diagram-bulb circle:not(.diagram-halo){fill:#fff2c8}
+.simple-workbench .bulb-aura,.simple-learning .bulb-aura{opacity:calc(var(--lamp-light,0) * .55)}
+#work-dialog.simple-workbench .work-bulb{position:relative;z-index:3}
+#work-dialog.simple-workbench .lamp-status{display:table;margin:2px auto 6px;padding:3px 12px;border-radius:20px;background:#e8ede7;color:#526c69;font-weight:700}
+#work-dialog.simple-workbench .lit .lamp-status{background:#f4dca0;color:#665024}
+#work-dialog.simple-workbench .lamp-status:after{display:none}
+#work-dialog.simple-workbench .wire-bed{stroke:#f8fbf5;stroke-width:9}
+#work-dialog.simple-workbench .wire-thread{stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+#work-dialog.simple-workbench .wire-selected .wire-thread{stroke:#a47326;stroke-width:6}
+#work-dialog.simple-workbench #work-wires.has-selection [data-wire]:not(.wire-selected){opacity:.3}
+#work-dialog.simple-workbench .erase-mode .wire-thread{stroke:#a55f49}
+#learning-dialog.simple-learning .result-card{border-radius:16px;background:#f0f4ed;border-color:#b8cec4}
+#learning-dialog.simple-learning .result-card[data-level=dim]{background:#edf1e2}
+#learning-dialog.simple-learning .result-card[data-level=bright]{background:#fbefc9;border-color:#d4b66f}
+#learning-dialog.simple-learning .switch-states{display:flex;justify-content:center;gap:12px;min-height:0}
+#learning-dialog.simple-learning .mini-switch{display:flex;flex-direction:column;align-items:center;margin:0;color:#345851}
+#learning-dialog.simple-learning .mini-switch svg{width:60px;height:24px;overflow:visible}
+#learning-dialog.simple-learning .mini-switch b{font-size:13px}
+#learning-dialog.simple-learning .mini-switch:not(:only-child) b{background:#d9e6df;border-radius:6px;min-width:24px;line-height:22px;color:#294f50}
+#learning-dialog.simple-learning .mini-switch em{font-style:normal;font-size:11px;line-height:1.2}
+#work-dialog.simple-workbench .material-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:0 6px;min-height:0}
+#work-dialog.simple-workbench .material-options button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-width:0;min-height:58px;padding:6px 2px;font-size:12px;white-space:nowrap}
+#work-dialog.simple-workbench .material-sample{margin:0}
+@media(max-width:900px){#work-dialog.simple-workbench .material-options button{font-size:11px}}
+@media(max-width:699px){
+ #work-dialog.simple-workbench #work-board:is([data-mission="3"],[data-mission="4"]) .power-part{grid-column:1;grid-row:1}
+ #work-dialog.simple-workbench #work-board:is([data-mission="3"],[data-mission="4"]) .lamp-0{grid-column:2;grid-row:1}
+ #work-dialog.simple-workbench #work-board:is([data-mission="3"],[data-mission="4"]) .material-part{grid-column:1/-1;grid-row:2}
+}
+@media(max-width:699px){
+ #work-dialog.simple-workbench .work-part h3{font-size:13px}
+ #work-dialog.simple-workbench .work-switch{width:calc(100% - 8px);margin:0 4px}
+ #work-dialog.simple-workbench .work-switch span{font-size:11px}
+ #learning-dialog.simple-learning .switch-states{gap:6px}
+ #learning-dialog.simple-learning .mini-switch svg{width:56px}
+}
+@media(prefers-reduced-motion:reduce){#work-dialog.simple-workbench .connect-point{transition:none}}
+/* A selected wire identifies its two ends, without implying a correct answer. */
+#work-dialog.simple-workbench .connect-point.wire-end{outline:2px solid #bd944c;outline-offset:3px}
+#work-dialog.simple-workbench #work-erase[aria-pressed=true]{background:#804b3d;color:#fff6ed;border-color:#d8a38b;box-shadow:inset 0 0 0 1px #e7bda2}
+#work-dialog.simple-workbench .erase-mode .wire-hit{cursor:crosshair}
+#work-dialog.simple-workbench #work-wire-list button[aria-current=true]{background:#f3dfa8;color:#284440;border-color:#d6b96f;font-weight:800}
+#work-dialog.simple-workbench #work-wire-list button:disabled{opacity:.55;cursor:default}
+#learning-dialog.simple-learning .compare-material{height:32px;width:100%;max-width:132px;margin:5px auto 6px}
+#learning-dialog.simple-learning .compare-repair{display:block;height:20px;width:100%;max-width:132px;margin:0 auto 6px;fill:#f6f8ef;stroke:#408278;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+#learning-dialog.simple-learning .mini-switch:only-child svg{width:92px;height:30px}
+#learning-dialog.simple-learning .compare-caption{margin:0 0 8px;color:#3c5d5c}
+#learning-dialog.simple-learning[data-mission="6"] .compare-caption{min-height:34px;display:grid;align-content:center}
+#learning-dialog.simple-learning[data-mission="6"] .result-card:first-child{border-style:dashed;border-color:#6e8f86}
+#learning-dialog.simple-learning .compare-cells{display:block;max-width:150px;height:32px;margin:4px auto 6px}
+#learning-dialog.simple-learning .result-card>strong:not(.switch-states){min-height:36px;display:flex;align-items:center;justify-content:center;line-height:1.35}
+#learning-dialog.simple-learning .result-card>span:last-child{vertical-align:middle}
+@media(min-width:360px) and (max-width:699px){
+ #learning-dialog.simple-learning .result-grid[data-count="3"]{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ #learning-dialog.simple-learning .result-grid[data-count="3"] .result-card{padding:8px 3px}
+ #learning-dialog.simple-learning .result-grid[data-count="3"] .result-card>strong{font-size:12px;min-height:48px}
+ #learning-dialog.simple-learning .result-grid[data-count="3"] .result-card>span:last-child{min-width:0;padding:4px 8px}
+ #learning-dialog.simple-learning .result-grid[data-count="3"] .compare-material{height:28px}
+}
+#learning-dialog.simple-learning .learning-choices button[aria-pressed=true]{background:#ead6a6;color:#1c4146;border-color:#f0e1b9;box-shadow:inset 0 0 0 1px #f9edcf}
+#learning-dialog.simple-learning .learning-choices button[aria-pressed=true]:before{background:#f7efda;border:5px solid #315e5b;box-shadow:0 0 0 1px #76948a}
+#learning-dialog.simple-learning .learning-choices button[aria-invalid=true]{background:#573d36;color:#fff0e3;border-color:#dca78c;box-shadow:none}
+#learning-dialog.simple-learning .learning-choices button[aria-invalid=true]:before{content:'×';background:none;border:0;box-shadow:none;color:#f2bea0;font-size:22px;line-height:16px;text-align:center}
+@media(max-width:699px){
+ #learning-dialog.simple-learning[data-mission="6"] .result-card{padding:6px 4px}
+ #learning-dialog.simple-learning[data-mission="6"] .compare-caption{min-height:28px;margin-bottom:4px;font-size:12px}
+ #learning-dialog.simple-learning[data-mission="6"] .mini-switch b{display:none}
+ #learning-dialog.simple-learning[data-mission="6"] .mini-switch svg{height:22px}
+ #learning-dialog.simple-learning[data-mission="6"] .work-bulb{height:64px}
+ #learning-dialog.simple-learning[data-mission="6"] .compare-cells{height:24px;margin:2px auto 4px}
+}
+
+.wire-break path{stroke:#b7543e;stroke-width:5;stroke-linecap:round}.wire-break text{fill:#9b3f2c!important;stroke:none}
+#learning-dialog.simple-learning[data-mission="6"][data-reasoning="true"] .result-grid{display:block;width:min(240px,100%);margin:10px auto}
+#learning-dialog.simple-learning[data-mission="6"][data-reasoning="true"] .compare-caption{min-height:0}
+.score-rule{flex:1 1 100px;align-self:center;font-size:12px;color:#bad0ca;margin:0;text-align:center}
+
+/* Shared text and button spacing across the experiment and answer panels. */
+#work-dialog.simple-workbench .work-actions{gap:10px}
+#work-dialog.simple-workbench .work-actions button{border-radius:12px}
+#learning-dialog.simple-learning footer button{border-radius:12px;font-size:14px;line-height:1.4}
+#learning-dialog.simple-learning .learning-choices button{line-height:1.5;font-weight:700}
+.score-rule{word-break:keep-all;line-height:1.45}
+@media(min-width:700px){#work-dialog.simple-workbench .work-part h3{font-size:15px}#work-dialog.simple-workbench .work-switch span{font-size:13px}#work-dialog.simple-workbench .cell-actions button{font-size:13px}#work-dialog.simple-workbench .work-actions button{font-size:15px}#work-dialog.simple-workbench #work-undo{font-size:26px}}
+@media(max-width:699px){#work-dialog.simple-workbench .work-actions{gap:8px}#learning-dialog.simple-learning footer button{font-size:13px}}

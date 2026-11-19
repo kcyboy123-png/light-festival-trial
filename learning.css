@@ -1,4 +1,4 @@
-.learning-dialog{box-sizing:border-box;width:min(920px,calc(100% - 24px));max-height:calc(100dvh - 24px);margin:auto;padding:22px 26px 12px;background:#102833;color:#eff3e7;border:1px solid #d1b881;border-radius:22px;overflow:auto;overscroll-behavior:contain;font:16px/1.55 system-ui,'Malgun Gothic',sans-serif;box-shadow:0 18px 80px #0008}
+.learning-dialog{box-sizing:border-box;width:min(920px,calc(100% - 24px));max-height:calc(100dvh - 24px);margin:auto;padding:22px 26px 12px;background:#102833;color:#eff3e7;border:1px solid #d1b881;border-radius:22px;overflow:auto;overscroll-behavior:contain;font:16px/1.55 SUIT,sans-serif;box-shadow:0 18px 80px #0008}
 .learning-dialog::backdrop{background:#04121cbd;backdrop-filter:blur(5px)}
 #learning-dialog header{position:sticky;inset:auto;top:-22px;z-index:3;background:#102833;padding:4px 0;pointer-events:auto;text-shadow:none;display:flex}
 #learning-dialog footer{left:auto;right:auto;pointer-events:auto;text-align:left;display:flex}

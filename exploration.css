@@ -37,3 +37,12 @@ body.learning-move #move-pad{border-color:#f3d89f;box-shadow:0 0 0 5px #f3d89f22
 
 #notebook-open{display:inline-flex;align-items:center;justify-content:center;gap:8px}#notebook-open svg{width:64px;height:38px;flex:none;pointer-events:none}#notebook-open span{pointer-events:none}
 @media(max-width:600px){#notebook-open svg{width:50px;height:32px}#notebook-open{gap:4px}}
+
+/* The action stays beside the score, clear of the movement pad. */
+body.playing #mission .mission-action-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center}
+body.playing #mission-action{width:100%;min-height:52px;padding:8px 14px;line-height:1.4;border-radius:14px;box-shadow:none}
+body.playing #progress{font-size:13px;min-height:48px;padding:0 10px;border-radius:12px}
+body.playing #view-nav{gap:8px}
+body.playing #view-nav button{border-radius:14px;font-size:14px;min-height:48px;background:#102833e8;border-color:#829d9c55}
+#explore-controls p{line-height:1.5}
+@media(max-width:600px){body.playing #mission .mission-action-row{gap:8px;grid-template-columns:minmax(0,1fr)}body.playing #progress{min-height:44px;justify-self:start;padding:0 8px;font-size:12px}body.playing #mission-action{min-height:48px;font-size:14px}body.playing #view-nav button{font-size:13px;padding:0 12px}}

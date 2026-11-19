@@ -1,13 +1,13 @@
 import * as T from 'three';
-import {softenOccluder,inFoxCutout} from './camera-visibility.js';
+import {softenOccluder,inFoxCutout} from './camera-visibility.js?v=trial-20261120-1';
 import {Water} from 'three/addons/objects/Water.js';
-import {createStarfox} from './character.js?v=trial-20261119-3';
-import {dressCity} from './city-dressing.js?v=trial-20261119-4';
-import {createGardens} from './gardens.js';
-import {plantBorders,loadGardenModels} from './planted-borders.js';
-import {createAwakening} from './awakening.js?v=trial-20261118-7';
-import {createCarousel,bakeMeshes} from './carousel-world.js';
-import {createFestivalReveal} from './festival-reveal.js';
+import {createStarfox} from './character.js?v=trial-20261120-1';
+import {dressCity} from './city-dressing.js?v=trial-20261120-1';
+import {createGardens} from './gardens.js?v=trial-20261120-1';
+import {plantBorders,loadGardenModels} from './planted-borders.js?v=trial-20261120-1';
+import {createAwakening} from './awakening.js?v=trial-20261120-1';
+import {createCarousel,bakeMeshes} from './carousel-world.js?v=trial-20261120-1';
+import {createFestivalReveal} from './festival-reveal.js?v=trial-20261120-1';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 const V=(x,y,z)=>new T.Vector3(x,y,z), TAU=Math.PI*2;

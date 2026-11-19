@@ -1,35 +1,49 @@
-import {studioBulb,diagramBulb,diagramSwitch} from './diagram-art.js?v=trial-20261119-13';
-import {labScene} from './lab-art.js?v=trial-20261119-13';
-import {LABS,CIRCUIT_QUESTIONS,LAB_QUESTIONS,circuitKey,labState,labPassed,labHint} from './inquiry-model.js?v=trial-20261119-13';
-import {MISSIONS,simulate,freshDraft} from './mission-model.js?v=trial-20261119-13';
-import {bulbArt,compactCell} from './circuit-art.js?v=trial-20261119-13';
+import {studioBulb,diagramBulb,diagramSwitch,diagramMaterial} from './diagram-art.js?v=trial-20261120-1';
+import {labScene} from './lab-art.js?v=trial-20261120-1';
+import {LABS,CIRCUIT_QUESTIONS,LAB_QUESTIONS,circuitKey,labState,labPassed,labHint} from './inquiry-model.js?v=trial-20261120-1';
+import {MISSIONS,simulate,freshDraft} from './mission-model.js?v=trial-20261120-1';
+import {bulbArt,compactCell} from './circuit-art.js?v=trial-20261120-1';
+import {circuitPicture} from './circuit-choices.js?v=trial-20261120-1';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 const icons={coil:'M4 7h16v10H4zM7 5v14m4-14v14m4-14v14',permanent:'M5 4v9a7 7 0 0 0 14 0V4h-5v9a2 2 0 0 1-4 0V4Z',switch:'M3 17h3m12 0h3M6 17 17 7M6 15v4m12-4v4',lift:'M5 18h14M12 16V4m-5 5 5-5 5 5',move:'M3 12h18M7 8l-4 4 4 4m10-8 4 4-4 4',cells:'M3 7h16v11H3zM19 10h2v5h-2M7 10v5m-2-2h4',core:'M5 5h14v14H5zM5 8h14M5 16h14',compare:'M4 7h6v12H4zM14 4h6v15h-6M3 22h18',reverse:'M4 8h14l-4-4M20 16H6l4 4',test:'M8 5v14l11-7Z',inspect:'M15 15l6 6M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0',repair:'M4 9a8 8 0 1 1 0 7M4 3v6h6',bulb:'M8 17h8M9 20h6M8 14a6 6 0 1 1 8 0v3H8Z',path:'M9 21V7q0-4 4-4h4M14 5h7l-1 7h-5Z',room:'M4 4h16v16H4zM12 4v16M4 12h16',dry:'M12 3Q4 12 4 15a8 8 0 0 0 16 0Q20 12 12 3ZM4 22 21 5',head:'M8 3v5m8-5v5M6 8h12v5a6 6 0 0 1-12 0ZM12 19v3',split:'M3 4h7v16H3zm11 0h7v16h-7M5 8h3m8 0h3M5 14h3m8 0h3',check:'m6 12 4 4 8-9M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0'};
 const button=(action,text,on=false)=>`<button data-lab-action="${action}" aria-pressed="${on}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${icons[action]}"/></svg><span>${text}</span></button>`;
-const battery=(x,y,n=1,reverse=false)=>Array.from({length:n},(_,j)=>compactCell('comparison-cell-'+x+'-'+j,x+j*70,y,62,30,!reverse)).join('');
+const battery=(p,x,y,n=1,reverse=false)=>Array.from({length:n},(_,j)=>compactCell('comparison-cell-'+p+'-'+j,x+j*70,y,62,30,!reverse)).join('');
 const stage=labScene;
-export function createLearningPanel({onChange,onComplete,onClose}){
- const dialog=document.createElement('dialog');dialog.id='learning-dialog';dialog.className='learning-dialog';dialog.setAttribute('aria-labelledby','learning-title');document.body.append(dialog);
- let index=0,draft=null,mode='lab',phase='predict',prediction=null,selected=null,question=null,choices=[],feedback='',finish=null,returnFocus=null,outcome=null,mainQuestion=null;
- const close=()=>dialog.close();
+export function createLearningPanel({onChange,onComplete,onClose,onWrong}){
+ const dialog=document.createElement('dialog');dialog.id='learning-dialog';dialog.className='learning-dialog simple-learning';dialog.setAttribute('aria-labelledby','learning-title');document.body.append(dialog);
+ let index=0,draft=null,mode='lab',phase='predict',prediction=null,selected=null,rejected=null,question=null,choices=[],feedback='',finish=null,returnFocus=null,outcome=null,mainQuestion=null;
+ const sessions=new Map();
+ const rememberSession=()=>{if(mode==='circuit')sessions.set(index,{key:circuitKey(draft),phase,prediction,selected,rejected,outcome,choices,question,feedback});};
+ const close=()=>{rememberSession();dialog.close();};
+ dialog.addEventListener('cancel',rememberSession);
  dialog.addEventListener('close',()=>{if(mode==='lab')onClose();else returnFocus?.focus({preventScroll:true});});
- function choiceUI(){return `<h3 id="learning-question" tabindex="-1">${esc(question.ask)}</h3><div class="learning-choices" role="group" aria-labelledby="learning-question">${choices.map(([id,text])=>`<button data-choice="${id}" aria-pressed="${selected===id}">${esc(text)}</button>`).join('')}</div>`;}
+ function choiceUI(figure=''){return `<h3 id="learning-question" tabindex="-1">${esc(question.ask)}</h3>${figure?'<div class="reasoning-layout">'+figure:''}<div class="learning-choices" role="group" aria-labelledby="learning-question">${choices.map(([id,text])=>`<button data-choice="${id}" aria-pressed="${selected===id}" aria-invalid="${rejected===id}">${esc(text)}</button>`).join('')}</div>${figure?'</div>':''}`;}
+ function reasoningFigure(){
+  if(outcome===null||![7,8].includes(index))return '';
+  const bridge=index===7,label=bridge?'점선: 새로 이은 선':'빗금: 끊긴 곳';
+  return `<figure class="reasoning-circuit" role="img" aria-label="${bridge?'A는 닫고 B는 연 채 B 양끝에 전선을 추가한 가정':'A는 열고 B만 닫은 두 갈래 회로에서 A 쪽 전선이 끊어진 가정'}"><figcaption>생각 실험 · ${label}</figcaption>${circuitPicture(bridge?'series':'parallel',MISSIONS[index],{...draft,switches:bridge?[true,false]:[false,true]},bridge?'bridge-b':'cut-a')}</figure>`;
+ }
  function circuitResults(){
   const m=MISSIONS[index];let rows=[];
-  if(index===2)rows=[['스위치 닫힘',simulate(m,draft)],['스위치 열림',simulate(m,draft,{switches:[false]})]];
-  if(index===3)rows=['copper','plastic','rubber'].map(material=>[({copper:'구리',plastic:'플라스틱',rubber:'고무'})[material],simulate(m,{...draft,material})]);
-  if(index===4){const before=freshDraft(m);rows=[['① 처음: 플라스틱',simulate(m,before)],['② 구리만 바꿈',simulate(m,{...before,material:'copper'})],['③ 구리 + 선 수리',simulate(m,draft)]];}
-  if(index===5)rows=[['전지 한 개',simulate(m,{...draft,cells:1})],['전지 두 개 · 직렬',simulate(m,draft)]];
-  if(index===6)rows=[['처음 배선 · 방향만 수리 · 열림',simulate(m,{...freshDraft(m),flipped:false},{switches:[false]})],['전지 한 개 · 닫힘',simulate(m,{...draft,cells:1})],['전지 두 개 · 닫힘',simulate(m,draft)],['전지 두 개 · 열림',simulate(m,draft,{switches:[false]})]];
-  if(index>=7)rows=[[true,true],[true,false],[false,true],[false,false]].map(switches=>['A '+(switches[0]?'닫힘':'열림')+' · B '+(switches[1]?'닫힘':'열림'),simulate(m,draft,{switches})]);
-  return `<div class="result-grid ${index>=6?'logic-results':''}">${rows.map(([label,r],i)=>`<div class="result-card ${r.brightness[0]>.001?'lit':''}" data-level="${r.brightness[0]>.75?'bright':r.brightness[0]>.001?'dim':'off'}" style="--lamp-light:${r.brightness[0]?Math.min(1,.18+Math.sqrt(r.brightness[0])*.82):0}"><strong>${label}</strong><svg class="work-bulb" viewBox="0 0 260 220" aria-hidden="true">${studioBulb('compare-'+index+'-'+i)}</svg>${index===5?`<svg class="compare-cells" viewBox="0 0 160 36" aria-label="전지 ${i+1}개">${battery(i?12:46,3,i+1)}${i?'<path d="M74 18H82" stroke="#a7d9c8" stroke-width="3"/>':''}</svg>`:''}<span>${r.brightness[0]>.75?'밝게 켜짐':r.brightness[0]>.001?'켜짐':'꺼짐'}${index===5?' · '+(i?'비교 대상':'비교 기준'):''}</span></div>`).join('')}</div><p class="learning-note">${index===5?'같은 3.0 V 전구·같은 배선, 전지는 각각 1.5 V예요. 서로 독립된 두 회로를 비교해요.':index===4?'처음 회로를 재현한 시험 기록이에요. 수리한 회로는 그대로 보존돼요.':index===6?'첫 칸은 고장 난 처음 배선의 시험이에요. 나머지는 고친 회로예요.':index>=7?'수리한 배선은 그대로 두고 A·B의 네 가지 상태를 모두 시험한 결과예요.':'배선은 그대로 두고 한 가지 조건만 바꿔 비교했어요.'}</p>`;
+  if(index===2)rows=[['스위치 닫힘',simulate(m,draft),[true]],['스위치 열림',simulate(m,draft,{switches:[false]}),[false]]];
+  if(index===3)rows=['copper','plastic','rubber'].map(material=>[({copper:'구리',plastic:'플라스틱',rubber:'고무'})[material],simulate(m,{...draft,material}),null,{material}]);
+  if(index===4){const before=freshDraft(m);rows=[['① 처음: 플라스틱',simulate(m,before),null,{material:'plastic',repaired:false}],['② 구리만 바꿈',simulate(m,{...before,material:'copper'}),null,{material:'copper',repaired:false}],['③ 구리 + 선 수리',simulate(m,draft),null,{material:'copper',repaired:true}]];}
+  if(index===5)rows=[['전지 한 개',simulate(m,{...draft,cells:1}),null,{cells:1}],['전지 두 개 · 직렬',simulate(m,draft),null,{cells:2}]];
+  if(index===6)rows=[['전지 방향만 바꾼 회로',simulate(m,{...freshDraft(m),flipped:false},{switches:[false]}),[false],{cells:2}],['수리 후',simulate(m,{...draft,cells:1}),[true],{cells:1}],['수리 후',simulate(m,draft),[true],{cells:2}],['수리 후',simulate(m,draft,{switches:[false]}),[false],{cells:2}]];
+  if(index===6&&outcome!==null)rows=rows.slice(0,1);
+  if(index>=7)rows=[[true,true],[true,false],[false,true],[false,false]].map(switches=>['A '+(switches[0]?'닫힘':'열림')+' · B '+(switches[1]?'닫힘':'열림'),simulate(m,draft,{switches}),switches]);
+  return `<div data-count="${rows.length}" class="result-grid ${index>=6?'logic-results':''}">${rows.map(([label,r,switches,props={}],i)=>`<div class="result-card ${r.brightness[0]>.001?'lit':''}" data-level="${r.brightness[0]>.75?'bright':r.brightness[0]>.001?'dim':'off'}" style="--lamp-light:${r.brightness[0]?Math.min(1,.18+Math.sqrt(r.brightness[0])*.82):0}">${switches?`${index===6?`<strong class="compare-caption">${label}</strong>`:''}<strong class="switch-states">${switches.map((on,j)=>`<span class="mini-switch"><b>${switches.length===1?'스위치':j?'B':'A'}</b><svg viewBox="0 0 180 60" aria-hidden="true">${diagramSwitch(on)}</svg><em>${on?'닫힘':'열림'}</em></span>`).join('')}</strong>`:`<strong>${label}</strong>`}<svg class="work-bulb" viewBox="0 0 260 220" aria-hidden="true">${studioBulb('compare-'+index+'-'+i)}</svg>${props.material?`<svg class="compare-material diagram-material" viewBox="0 0 180 36" aria-hidden="true">${diagramMaterial(props.material)}</svg>`:''}${typeof props.repaired==='boolean'?`<svg class="compare-repair" viewBox="0 0 180 36" role="img" aria-label="${props.repaired?'이어진 전선':'끊긴 전선'}"><path d="${props.repaired?'M10 18H170':'M10 18H74l6-5M100 23l6-5H170'}"/><circle cx="10" cy="18" r="4"/><circle cx="170" cy="18" r="4"/></svg>`:''}${props.cells?`<svg class="compare-cells" viewBox="0 0 160 36" aria-label="전지 ${props.cells}개">${battery(index+'-'+i,props.cells===2?12:46,3,props.cells)}${props.cells===2?'<path d="M74 18H82" stroke="#a7d9c8" stroke-width="3"/>':''}</svg>`:''}<span>${r.brightness[0]>.75?'밝게 켜짐':r.brightness[0]>.001?'켜짐':'꺼짐'}${index===5?' · '+(i?'비교 대상':'비교 기준'):''}</span></div>`).join('')}</div><p class="learning-note">${index===5?'같은 전구·같은 배선, 전지 수만 달라요.':index===4?'처음 회로를 재현한 시험 기록이에요. 수리한 회로는 그대로 보존돼요.':index===6?'첫 칸은 고장 난 처음 배선의 시험이에요. 나머지는 고친 회로예요.':index>=7?'수리한 배선은 그대로 두고 A·B의 네 가지 상태를 모두 시험한 결과예요.':'배선은 그대로 두고 한 가지 조건만 바꿔 비교했어요.'}</p>`;
  }
  function render(){
-  const active=dialog.querySelector(':focus'),focus=active?.dataset,activeId=active?.id,lab=mode==='lab',s=lab?labState(index,draft):null,ready=lab?s.ready:phase==='observe';
+  const active=dialog.querySelector(':focus'),focus=active?.dataset,activeId=active?.id,lab=mode==='lab',s=lab?labState(index,draft):null,ready=lab?s.ready:phase==='observe',retry=selected!==null&&selected===rejected;
+  dialog.dataset.reasoning=String(outcome!==null);dialog.dataset.mode=mode;
   let content='';
-  if(!lab){content=phase==='predict'?`<p>먼저 예상해 보세요. 틀려도 실험하고 고칠 수 있어요.</p><h3>${esc(question.predict)}</h3><div class="learning-choices">${question.predictions.map((t,j)=>`<button data-predict="${j}" aria-pressed="${prediction===j}">${esc(t)}</button>`).join('')}</div>`:circuitResults()+choiceUI();}
+  if(!lab){
+   const figure=reasoningFigure(),resultsOpen=dialog.querySelector('.previous-results')?.open;
+   content=index===6&&outcome!==null?choiceUI(circuitResults()):phase==='predict'?`<h3>${esc(question.predict)}</h3><div class="learning-choices">${question.predictions.map((t,j)=>`<button data-predict="${j}" aria-pressed="${prediction===j}">${esc(t)}</button>`).join('')}</div>`:figure?choiceUI(figure)+`<details class="previous-results" ${resultsOpen?'open':''}><summary>시험 결과 다시 보기</summary>${circuitResults()}</details>`:circuitResults()+choiceUI();
+  }
   else{
    content='<div class="experiment-workspace">'+stage(index,s)+'<div class="lab-controls">';
    if(index===6)content+=button('coil','전자석',s.tool==='coil')+button('permanent','영구 자석',s.tool==='permanent')+button('switch',s.on?'스위치 열기':'스위치 닫기',s.on)+button('lift','철 장식 들어 보기')+button('move',s.right?'출발점으로':'바구니 위로');
@@ -42,29 +56,30 @@ export function createLearningPanel({onChange,onComplete,onClose}){
    content+=`<p class="lab-status" role="status">${esc(s.message)}</p>`;
    if(ready)content+=choiceUI();
   }
-  dialog.innerHTML=`<header><div><small>${index+1} / 10 · ${lab?'도시 탐구':'관찰로 확인'}</small><h2 id="learning-title">${esc(MISSIONS[index].title)}</h2></div><button id="learning-close" aria-label="탐구 닫기">×</button></header>${lab?'<p id="learning-goal">'+esc(LABS[index-6].task)+'</p>':''}${content}<p id="learning-feedback" role="status" aria-live="polite">${esc(feedback)}</p><footer>${lab?'<button id="lab-undo" '+(!draft.actions.length?'disabled':'')+'>되돌리기</button><button id="lab-reset">다시 해 보기</button>':''}<button id="learning-hint">관찰 도움</button><button id="learning-submit" ${(!lab&&phase==='predict'?prediction===null:!ready||selected===null)?'disabled':''}>${!lab&&phase==='predict'?'예상하고 실험하기':lab?'확인하고 빛 보내기':'관찰 결과 확인'}</button></footer><p class="learning-note">${lab?'모의 실험이에요. 실제 전기 기구를 분해하거나 콘센트에서 실험하지 않아요.':''}${lab&&index===7?' 장식 무게와 들리는 모습은 원리를 보여 주는 모의 결과예요.':''}</p>`;
+  dialog.innerHTML=`<header><div><small>${index+1} / 10${lab?'':' · '+(phase==='predict'?'예상':mainQuestion.outcome&&outcome===null?'관찰':'생각')}</small><h2 id="learning-title">${esc(MISSIONS[index].title)}</h2></div><button id="learning-close" aria-label="${lab?'탐구 닫기':'회로로 돌아가기'}">${lab?'×':'← 회로'}</button></header>${lab?'<p id="learning-goal">'+esc(LABS[index-6].task)+'</p>':''}${content}<p id="learning-feedback" role="status" aria-live="polite">${esc(feedback)}</p><footer>${lab?'<button id="lab-undo" '+(!draft.actions.length?'disabled':'')+'>되돌리기</button><button id="lab-reset">다시 해 보기</button>':''}<button id="learning-hint" ${!lab&&phase==='predict'?'hidden':''}>${!lab&&phase==='predict'?'회로 보기':'관찰 도움'}</button>${onWrong?'<p class="score-rule">오답 −20 · 예상·실험은 감점 없음</p>':''}<button id="learning-submit" ${(!lab&&phase==='predict'?prediction===null:!ready||selected===null||retry)?'disabled':''}>${!lab&&phase==='predict'?(prediction===null?'예상을 골라요':'실험하기'):lab?'확인하고 빛 보내기':retry?'다시 골라요':selected===null?'답을 골라요':'답 제출'}</button></footer><p class="learning-note">${lab?'모의 실험이에요. 실제 전기 기구를 분해하거나 콘센트에서 실험하지 않아요.':''}${lab&&index===7?' 장식 무게와 들리는 모습은 원리를 보여 주는 모의 결과예요.':''}</p>`;
   dialog.querySelector('#learning-close').onclick=close;
   for(const b of dialog.querySelectorAll('[data-predict]'))b.onclick=()=>{prediction=+b.dataset.predict;render();};
-  for(const b of dialog.querySelectorAll('[data-choice]'))b.onclick=()=>{selected=b.dataset.choice;feedback='선택했어요. 아래 확인 버튼을 눌러요.';render();};
+  for(const b of dialog.querySelectorAll('[data-choice]'))b.onclick=()=>{if(selected===b.dataset.choice)return;selected=b.dataset.choice;rejected=null;feedback='';render();};
   for(const b of dialog.querySelectorAll('[data-lab-action]'))b.onclick=()=>{
    if(index===6&&s.held&&['coil','permanent'].includes(b.dataset.labAction)){feedback='들고 있는 동안에는 장치를 바꿀 수 없어요. 되돌리기로 들기 전으로 돌아가요.';render();return;}
    if(draft.actions.length>=160){feedback='실험 기록이 가득 찼어요. 다시 해 보기로 새 시험을 시작할 수 있어요.';render();return;}
-   draft.actions.push(b.dataset.labAction);draft.answer=null;selected=null;feedback='';onChange(index,structuredClone(draft));render();
+   draft.actions.push(b.dataset.labAction);draft.answer=null;selected=null;rejected=null;feedback='';onChange(index,structuredClone(draft));render();
    if(!s.ready&&labState(index,draft).ready){const q=dialog.querySelector('#learning-question');q.focus({preventScroll:true});q.scrollIntoView({block:'center'});}
   };
-  dialog.querySelector('#lab-undo')?.addEventListener('click',()=>{draft.actions.pop();draft.answer=null;selected=null;feedback='마지막 조작을 되돌렸어요.';onChange(index,structuredClone(draft));render();});
-  dialog.querySelector('#lab-reset')?.addEventListener('click',()=>{draft.actions=[];draft.answer=null;selected=null;feedback='처음 상태에서 다시 시험해요.';onChange(index,structuredClone(draft));render();});
-  dialog.querySelector('#learning-hint').onclick=()=>{feedback=lab?labHint(index,s):phase==='predict'?'예상을 하나 골라 실험하기를 눌러요. 예상이 틀려도 괜찮아요.':question.hint;render();};
+  dialog.querySelector('#lab-undo')?.addEventListener('click',()=>{draft.actions.pop();draft.answer=null;selected=null;rejected=null;feedback='마지막 조작을 되돌렸어요.';onChange(index,structuredClone(draft));render();});
+  dialog.querySelector('#lab-reset')?.addEventListener('click',()=>{draft.actions=[];draft.answer=null;selected=null;rejected=null;feedback='처음 상태에서 다시 시험해요.';onChange(index,structuredClone(draft));render();});
+  dialog.querySelector('#learning-hint').onclick=()=>{if(!lab&&phase==='predict'){close();return;}feedback=lab?labHint(index,s):question.hint;render();dialog.querySelector('#learning-feedback').scrollIntoView({block:'nearest'});};
   dialog.querySelector('#learning-submit').onclick=()=>{
-   if(!lab&&phase==='predict'){if(prediction===null)return;phase='observe';if(mainQuestion.outcome){question=mainQuestion.outcome;choices=shuffle(question.choices);}feedback='예상과 달라도 괜찮아요. 실제 결과를 보고 판단해요.';render();dialog.scrollTop=0;return;}
+   if(!lab&&phase==='predict'){if(prediction===null)return;phase='observe';if(mainQuestion.outcome){question=mainQuestion.outcome;choices=shuffle(question.choices);}feedback='';render();dialog.scrollTop=0;return;}
    if(!ready||selected===null)return;
-   if(selected!==question.answer){feedback='관찰 결과와 아직 맞지 않아요. '+question.hint;render();return;}
-   if(!lab&&mainQuestion.outcome&&outcome===null){outcome=selected;selected=null;question=mainQuestion;choices=shuffle(question.choices);feedback='결과를 확인했어요. 이제 조건을 바꾸면 어떻게 될지 생각해요.';render();const q=dialog.querySelector('#learning-question');q.focus({preventScroll:true});q.scrollIntoView({block:'center'});return;}
+   if(selected!==question.answer){const charged=onWrong?.(index,mainQuestion.outcome&&outcome===null?'observation':'reason',selected);rejected=selected;feedback=(charged?'−20점 · ':'')+'다시 살펴봐요. '+question.hint;document.dispatchEvent(new CustomEvent('festival-sound',{detail:'wrong'}));render();dialog.querySelector('#learning-feedback').scrollIntoView({block:'nearest'});return;}
+   document.dispatchEvent(new CustomEvent('festival-sound',{detail:'correct'}));
+   if(!lab&&mainQuestion.outcome&&outcome===null){outcome=selected;selected=null;rejected=null;question=mainQuestion;choices=shuffle(question.choices);feedback='';render();const q=dialog.querySelector('#learning-question');q.focus({preventScroll:true});q.scrollIntoView({block:'center'});return;}
    if(lab){draft.answer=selected;if(!labPassed(index,draft))return;onChange(index,structuredClone(draft));dialog.close();onComplete(index,structuredClone(draft));}
-   else{const e={key:circuitKey(draft),prediction,observed:true,answer:selected,...(outcome?{outcome}:{})};dialog.close();finish(e);}
+   else{const e={key:circuitKey(draft),prediction,observed:true,answer:selected,...(outcome?{outcome}:{})};close();finish(e);}
   };
-  if(focus){const selector=focus.choice?'[data-choice="'+focus.choice+'"]':focus.predict!==undefined?'[data-predict="'+focus.predict+'"]':focus.labAction?'[data-lab-action="'+focus.labAction+'"]':activeId?'#'+activeId:null;let next=selector?dialog.querySelector(selector):null;if(!next||next.disabled)next=dialog.querySelector(ready?'#learning-question':'.lab-controls button:not(:disabled)');next?.focus({preventScroll:true});}
+  if(focus){const selector=focus.choice?'[data-choice="'+focus.choice+'"]':focus.predict!==undefined?'[data-predict="'+focus.predict+'"]':focus.labAction?'[data-lab-action="'+focus.labAction+'"]':activeId?'#'+activeId:null;let next=selector?dialog.querySelector(selector):null;if(!next||next.disabled)next=dialog.querySelector(retry?'[data-choice][aria-pressed=true]':ready?'#learning-question':'.lab-controls button:not(:disabled)');next?.focus({preventScroll:true});}
  }
- function open(i,d,isLab,done){index=i;draft=structuredClone(d);mode=isLab?'lab':'circuit';question=isLab?LAB_QUESTIONS[i-6]:CIRCUIT_QUESTIONS[i];mainQuestion=question;outcome=null;choices=shuffle(question.choices);selected=null;prediction=null;phase='predict';feedback='';finish=done;returnFocus=document.activeElement;render();dialog.setAttribute('aria-describedby',isLab?'learning-goal':'learning-title');dialog.showModal();dialog.scrollTop=0;}
- return {openLab:(i,d)=>open(i,d,true),openCircuit:(i,d,done)=>open(i,d,false,done),get isOpen(){return dialog.open;}};
+ function open(i,d,isLab,done){dialog.dataset.mission=i;index=i;draft=structuredClone(d);mode=isLab?'lab':'circuit';question=isLab?LAB_QUESTIONS[i-6]:CIRCUIT_QUESTIONS[i];mainQuestion=question;outcome=null;choices=shuffle(question.choices);selected=null;rejected=null;prediction=null;phase='predict';feedback='';finish=done;returnFocus=document.activeElement;const saved=!isLab&&sessions.get(i);if(saved?.key===circuitKey(d)){({phase,prediction,selected,rejected,outcome,choices,question,feedback}=saved);}render();dialog.setAttribute('aria-describedby',isLab?'learning-goal':'learning-title');dialog.showModal();if(!isLab)requestAnimationFrame(()=>{if(dialog.open&&phase==='predict')(dialog.querySelector('[data-predict][aria-pressed=true]')||dialog.querySelector('[data-predict]'))?.focus({preventScroll:true});});dialog.scrollTop=0;}
+ return {resetSessions:()=>sessions.clear(),openLab:(i,d)=>open(i,d,true),openCircuit:(i,d,done)=>open(i,d,false,done),get isOpen(){return dialog.open;}};
 }
