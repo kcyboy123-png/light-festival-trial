@@ -1,10 +1,10 @@
-import {CHOICE_TYPES,CIRCUIT_DESCRIPTIONS,circuitWires,circuitPicture,sameWires} from './circuit-choices.js?v=trial-20261120-2';
-import {studioBulb,diagramBulb,diagramSwitch,diagramMaterial} from './diagram-art.js?v=trial-20261120-2';
-import {createLearningPanel} from './learning-panel.js?v=trial-20261120-2';
-import {hasEvidence} from './inquiry-model.js?v=trial-20261120-2';
-import {MISSIONS,freshDraft,checkMission,simulate,shortWireIndices} from './mission-model.js?v=trial-20261120-2';
-import {bulbArt,compactCell,compactSwitch} from './circuit-art.js?v=trial-20261120-2';
-import {BRIEFS,nextHint,diagnosis,testObservation,experiments,observationText,OBJECTIVES,SIMPLE_GOALS} from './mission-guide.js?v=trial-20261120-2';
+import {CHOICE_TYPES,CIRCUIT_DESCRIPTIONS,circuitWires,circuitPicture,sameWires} from './circuit-choices.js?v=trial-20261120-3';
+import {studioBulb,diagramBulb,diagramSwitch,diagramMaterial} from './diagram-art.js?v=trial-20261120-3';
+import {createLearningPanel} from './learning-panel.js?v=trial-20261120-3';
+import {hasEvidence} from './inquiry-model.js?v=trial-20261120-3';
+import {MISSIONS,freshDraft,checkMission,simulate,shortWireIndices} from './mission-model.js?v=trial-20261120-3';
+import {bulbArt,compactCell,compactSwitch} from './circuit-art.js?v=trial-20261120-3';
+import {BRIEFS,nextHint,diagnosis,testObservation,experiments,observationText,OBJECTIVES,SIMPLE_GOALS} from './mission-guide.js?v=trial-20261120-3';
 
 const copy=d=>JSON.parse(JSON.stringify(d));
 export function createMissionPanel({onChange,onComplete,onClose,onWrong}){

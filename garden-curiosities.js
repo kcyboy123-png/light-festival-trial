@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {createFlowerClue} from './flower-clue.js?v=trial-20261120-2';
+import {createFlowerClue} from './flower-clue.js?v=trial-20261120-3';
 const names=['별씨 꽃','춤추는 꽃','물방울 꽃','달고리 꽃'];
 const replies=['인사하니 작은 별씨가 피어올라요!','꽃잎 주위에서 별빛이 춤을 춰요!','꽃에서 빛방울이 퐁퐁 솟아올라요!','별빛이 꽃을 둥글게 감싸요!'];
 const again=['별씨 꽃이 여우를 알아보고 다시 별씨를 보내요!','춤추는 꽃이 다시 인사하며 별빛 춤을 춰요!','물방울 꽃이 다시 반기며 빛방울을 올려요!','달고리 꽃이 다시 여우 곁에 빛고리를 만들어요!'];

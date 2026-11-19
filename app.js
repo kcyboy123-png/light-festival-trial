@@ -5,13 +5,13 @@ import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
-import {createWorld} from './world.js?v=trial-20261120-2';
-import {nearestNode,route,walkStep,canTraverse} from './navigation.js?v=trial-20261120-2';
-import {createExplorationInput} from './exploration-input.js?v=trial-20261120-2';
-import {createGame} from './game.js?v=trial-20261120-2';
-import {safeFollowAngle} from './camera-follow.js?v=trial-20261120-2';
-import {initialQuality,renderPixelRatio} from './quality-policy.js?v=trial-20261120-2';
-import {createArrival} from './arrival.js?v=trial-20261120-2';
+import {createWorld} from './world.js?v=trial-20261120-3';
+import {nearestNode,route,walkStep,canTraverse} from './navigation.js?v=trial-20261120-3';
+import {createExplorationInput} from './exploration-input.js?v=trial-20261120-3';
+import {createGame} from './game.js?v=trial-20261120-3';
+import {safeFollowAngle} from './camera-follow.js?v=trial-20261120-3';
+import {initialQuality,renderPixelRatio} from './quality-policy.js?v=trial-20261120-3';
+import {createArrival} from './arrival.js?v=trial-20261120-3';
 
 const previewMode=new URLSearchParams(location.search).get('preview')==='1';
 const $=s=>document.querySelector(s),canvas=$('#scene'),reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -105,8 +105,23 @@ try{
   const guide=new T.Group();guide.visible=false;scene.add(guide);const guideMat=new T.MeshBasicMaterial({color:0xd5f2e8,transparent:true,opacity:.4,depthWrite:false,toneMapped:false});
   const guideDots=Array.from({length:10},()=>new T.Object3D()),guideColor=new T.Color();
   const guideMesh=new T.InstancedMesh(new T.OctahedronGeometry(.14),guideMat,10);guideMesh.name='pearl-path';guideMesh.frustumCulled=false;guideMesh.count=0;for(let i=0;i<10;i++)guideMesh.setColorAt(i,guideColor.setScalar(1));guideMesh.instanceMatrix.setUsage(T.DynamicDrawUsage);guide.add(guideMesh);
-  let guideClock=0,guideRecomputes=0,guideFrom=-1,guideTo=-1,guideIds=[];const guidePoints=[];
-  function updateGuide(dt){const info=game?.guide;guide.visible=!!info&&info.level>=2&&!game.blocked&&!info.near;if(!guide.visible)return;guideClock+=dt;const from=nearestNode(world.nodes,world.hero.position);if(from!==guideFrom||info.node!==guideTo){guideFrom=from;guideTo=info.node;guideIds=route(world.nodes,world.edges,from,info.node);guideRecomputes++;}const ids=guideIds;let distance=0,previous=world.hero.position;const points=guidePoints;points.length=0;for(const id of ids){const v=world.nodes[id];distance+=v.distanceTo(previous);if(distance>(info.level>=3?9:4))break;if(distance>.7)points.push(v);previous=v;}guideDots.forEach((dot,i)=>{dot.visible=i<points.length;if(dot.visible){dot.position.copy(points[i]);dot.position.y+=.09;const next=points[i+1]||world.nodes[info.node];dot.rotation.y=Math.atan2(next.x-dot.position.x,next.z-dot.position.z);dot.scale.set(.72,.14,1.2);dot.updateMatrix();guideMesh.setMatrixAt(i,dot.matrix);const pulse=reduceMotion?1:.72+.28*Math.pow(.5+.5*Math.sin(guideClock*1.3-i*.8),2);guideColor.setScalar(pulse);guideMesh.setColorAt(i,guideColor);}});guideMesh.count=Math.min(10,points.length);guideMesh.instanceMatrix.needsUpdate=true;if(guideMesh.instanceColor)guideMesh.instanceColor.needsUpdate=true;guideMat.opacity=info.level>=3?.58:.4;}
+  let guideClock=0,guideRecomputes=0,guideFrom=-1,guideTo=-1,guideIds=[],guideX=NaN,guideZ=NaN,guidePoseTarget=-1;const guidePoints=[],guideLastPoints=[];
+  function updateGuide(dt){
+    const info=game?.guide;guide.visible=!!info&&info.level>=2&&!game.blocked&&!info.near;if(!guide.visible)return;
+    guideClock+=dt;let from=guideFrom;
+    if(world.hero.position.x!==guideX||world.hero.position.z!==guideZ){guideX=world.hero.position.x;guideZ=world.hero.position.z;from=nearestNode(world.nodes,world.hero.position);}
+    if(from!==guideFrom||info.node!==guideTo){guideFrom=from;guideTo=info.node;guideIds=route(world.nodes,world.edges,from,info.node);guideRecomputes++;}
+    let distance=0,previous=world.hero.position;const points=guidePoints;points.length=0;
+    for(const id of guideIds){const v=world.nodes[id];distance+=v.distanceTo(previous);if(distance>(info.level>=3?9:4))break;if(distance>.7)points.push(v);previous=v;}
+    const changed=info.node!==guidePoseTarget||points.length!==guideLastPoints.length||points.some((p,i)=>p!==guideLastPoints[i]);
+    guideDots.forEach((dot,i)=>{
+      dot.visible=i<points.length;if(!dot.visible)return;
+      if(changed){dot.position.copy(points[i]);dot.position.y+=.09;const next=points[i+1]||world.nodes[info.node];dot.rotation.y=Math.atan2(next.x-dot.position.x,next.z-dot.position.z);dot.scale.set(.72,.14,1.2);dot.updateMatrix();guideMesh.setMatrixAt(i,dot.matrix);}
+      if(changed||!reduceMotion){const pulse=reduceMotion?1:.72+.28*Math.pow(.5+.5*Math.sin(guideClock*1.3-i*.8),2);guideColor.setScalar(pulse);guideMesh.setColorAt(i,guideColor);}
+    });
+    if(changed){guidePoseTarget=info.node;guideLastPoints.length=points.length;for(let i=0;i<points.length;i++)guideLastPoints[i]=points[i];guideMesh.count=Math.min(10,points.length);guideMesh.instanceMatrix.needsUpdate=true;}
+    if(guideMesh.instanceColor&&(changed||!reduceMotion))guideMesh.instanceColor.needsUpdate=true;guideMat.opacity=info.level>=3?.58:.4;
+  }
 
   let last=performance.now(),elapsed=0,frameCount=0,renderTime=0,hidden=false,contextLost=false,lastShadow=0;
   addEventListener('blur',()=>{travel(null);pointers.clear();down=null;});
@@ -156,7 +171,7 @@ try{
     }
     game?.update(gameDt,moving||walking.length>0,{looking:now<lookUntil});world.update(elapsed,dt,stage,reduceMotion);updateGuide(dt);drawFrame(now);
   }
-  function drawFrame(now){if(quality==='light'&&now-lastShadow>=(world.carousel.lit||world.hero.userData.gait?.speed>0?1000/12:250)){renderer.shadowMap.needsUpdate=true;lastShadow=now;}scene.updateMatrixWorld();scene.matrixWorldAutoUpdate=false;renderer.info.reset();const start=performance.now();composer.render();renderTime+=performance.now()-start;frameCount++;}
+  function drawFrame(now){const shadowRefresh=quality==='light'&&now-lastShadow>=(world.carousel.lit||world.hero.userData.gait?.speed>0?1000/12:250);world.beginFrame(shadowRefresh);if(shadowRefresh){renderer.shadowMap.needsUpdate=true;lastShadow=now;}scene.updateMatrixWorld();scene.matrixWorldAutoUpdate=false;renderer.info.reset();const start=performance.now();composer.render();renderTime+=performance.now()-start;frameCount++;}
   const initial=new URLSearchParams(location.search).get('stage');setStage(previewMode?(initial!==null&&/^[012]$/.test(initial)?+initial:2):0,{instant:true});
   if(!previewMode){document.body.classList.add('playing');$('#mission').hidden=false;$('#restart-game').hidden=false;$('#explore-controls').hidden=false;game=createGame(world,{travel,resume,goView,project,reduceMotion,showReward});}
   window.__festival={ready:false,setStage:(s)=>setStage(s,{instant:true}),goView:(s)=>goView(s,true),getState:()=>({cameraFollowing:world.cameraFollowing.value,cameraFov:camera.fov,rewardCamera:rewardShot?{index:rewardShot.index,progress:rewardShot.progress}:null,arrival:arrival?{elapsed:arrival.elapsed}:null,game:game?.state,carousel:world.carousel.state,festival:world.festival.state,stage,current:world.current,viewpoint,camera:camera.position.toArray(),cameraTarget:controls.target.toArray(),guideVisible:guide.visible,guideRecomputes,guidePoints:guideDots.filter(p=>p.visible).map(p=>p.position.toArray()),quality,hero:world.hero.position.toArray(),heroHeading:world.hero.rotation.y,heroGroundOffset:new T.Box3().setFromObject(world.hero,true).min.y-world.hero.position.y,walking:walking.length,walkDistance,frames:frameCount,averageRenderMs:renderTime/Math.max(1,frameCount),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,gardens:world.gardenStats,character:world.hero.userData.asset,gait:world.hero.userData.gait,hip:world.hero.getObjectByName('mixamorigHips')?.getWorldPosition(new T.Vector3()).toArray(),contextLost,reflection:!!world.water.material.uniforms.mirrorSampler.value}),projectNode:i=>{const p=world.nodes[i].clone().project(camera);return {x:(p.x+1)/2*innerWidth,y:(1-p.y)/2*innerHeight};},stations:world.missionSites.map((s,i)=>({name:String(i+1),node:s.node})),edges:world.edges,walkRadii:world.nodes.map(p=>p.walkRadius),plazas:world.plazas,obstacles:world.obstacles,nodes:world.nodes.map(p=>p.toArray())};

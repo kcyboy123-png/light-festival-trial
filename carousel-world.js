@@ -12,7 +12,7 @@ export function createCarousel(scene){
   const root=new T.Group(),fixed=new T.Group(),rotor=new T.Group();root.add(fixed,rotor);
   const standard=(color,metalness=.3,roughness=.3)=>new T.MeshStandardMaterial({color,metalness,roughness,envMapIntensity:.5});
   const ivory=standard(0xe7ddd7,.2,.26),teal=standard(0x1a606b,.55,.23),gold=standard(0xc8a563,.83,.24),rose=standard(0x896b8a,.4,.3),dark=standard(0x182e42,.35,.42),black=standard(0x13252b,.1,.25);
-  const glow=(color)=>new T.MeshStandardMaterial({color:0x8a8173,emissive:color,emissiveIntensity:0,metalness:.3,roughness:.22});
+  const glow=(color)=>{const m=new T.MeshStandardMaterial({color:0x8a8173,emissive:color,emissiveIntensity:0,metalness:.3,roughness:.22});m.userData.detailLight=true;return m;};
   const deckLight=glow(0xffcf87),roofLight=glow(0xffe0a2),pinkLight=glow(0xf0a6d4),gardenLight=glow(0x9cdeeb);
   function mesh(g,m,p=[0,0,0],parent=fixed){const o=new T.Mesh(g,m);o.position.set(...p);o.castShadow=o.receiveShadow=true;parent.add(o);return o;}
   function sphere(p,s,m,parent=fixed){const o=mesh(new T.SphereGeometry(1,20,14),m,p,parent);o.scale.set(...s);return o;}

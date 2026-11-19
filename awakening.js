@@ -54,9 +54,9 @@ export function createAwakening(scene, lightMats) {
   const sparks=new T.Points(geometry,material);sparks.visible=false;scene.add(sparks);
   let progress=[0,0,0];
   return {
-    set(values){strength.value.fromArray(values);enabled.value=1;progress=values;sparks.visible=values.some(v=>v>0);values.forEach((v,i)=>radii.value.setComponent(i,v>0?T.MathUtils.lerp(.1,LIGHT_RADII[i],v):-5));},
+    set(values){if(enabled.value===1&&strength.value.x===values[0]&&strength.value.y===values[1]&&strength.value.z===values[2])return;strength.value.fromArray(values);enabled.value=1;progress=values;sparks.visible=values.some(v=>v>0);values.forEach((v,i)=>{radii.value.setComponent(i,v>0?T.MathUtils.lerp(.1,LIGHT_RADII[i],v):-5);lights[i].intensity=v*62;});},
     setFestival(radius,origin,pulse=0){festivalRadius.value=radius;festivalOrigin.value.copy(origin);festivalPulse.value=pulse;},
-    update(time,pixelRatio){material.uniforms.time.value=time;material.uniforms.pixelRatio.value=pixelRatio;lights.forEach((l,i)=>l.intensity=progress[i]*62);},
+    update(time,pixelRatio){material.uniforms.time.value=time;material.uniforms.pixelRatio.value=pixelRatio;},
     get progress(){return progress;},get enabled(){return enabled.value===1;},get radii(){return radii.value.toArray();}
   };
 }

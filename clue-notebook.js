@@ -1,4 +1,4 @@
-import {fountainClueArt} from './fountain-clue-art.js?v=trial-20261120-2';
+import {fountainClueArt} from './fountain-clue-art.js?v=trial-20261120-3';
 export function createClueNotebook({isRead,canDiscover,onRead,onObserve}){
   const $=s=>document.querySelector(s),dialog=$('#clue-dialog'),art=dialog.querySelector('svg'),firstArt=art.innerHTML;
   const pages=[

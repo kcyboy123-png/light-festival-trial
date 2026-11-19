@@ -1,6 +1,6 @@
 import * as T from 'three';
-import {loadModel} from './load-model.js?v=trial-20261120-2';
-import {softenStarfox} from './fox-face.js?v=trial-20261120-2';
+import {loadModel} from './load-model.js?v=trial-20261120-3';
+import {softenStarfox} from './fox-face.js?v=trial-20261120-3';
 
 export async function createStarfox(renderer) {
   const gltf=await loadModel('./assets/starfox.glb');
@@ -34,11 +34,12 @@ export async function createStarfox(renderer) {
   const idle=actions.find(a=>/idle/i.test(a.name));
   if(walk)walk.action.play();if(idle)idle.action.play();
   let motion=0;
+  const gait=hero.userData.gait={speed:0,weight:0,timeScale:0};
   hero.userData.asset={provider:'Tripo',triangles,bones,clips:gltf.animations.map(c=>c.name)};
   return {hero,update(dt,speed,reduceMotion){
     motion=T.MathUtils.damp(motion,speed>0&&!reduceMotion?1:0,8,dt);
     if(walk){walk.action.setEffectiveWeight(motion);walk.action.setEffectiveTimeScale(Math.min(1,Math.max(0,speed)));}
-    hero.userData.gait={speed,weight:motion,timeScale:walk?.action.getEffectiveTimeScale()||0};
+    gait.speed=speed;gait.weight=motion;gait.timeScale=walk?.action.getEffectiveTimeScale()||0;
     if(idle)idle.action.setEffectiveWeight(1-motion);
     mixer.update(reduceMotion?0:dt);
   }};

@@ -1,4 +1,4 @@
-import {drawFountainClue} from './fountain-clue-art.js?v=trial-20261120-2';
+import {drawFountainClue} from './fountain-clue-art.js?v=trial-20261120-3';
 import * as T from 'three';
 export function createFlowerClue(scene,stand,symbol='bridge'){
   const root=new T.Group();root.position.copy(stand).add(new T.Vector3(.85,0,1.6));root.scale.setScalar(.7);scene.add(root);

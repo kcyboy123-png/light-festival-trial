@@ -1,13 +1,13 @@
 import * as T from 'three';
-import {softenOccluder,inFoxCutout} from './camera-visibility.js?v=trial-20261120-2';
+import {softenOccluder,inFoxCutout} from './camera-visibility.js?v=trial-20261120-3';
 import {Water} from 'three/addons/objects/Water.js';
-import {createStarfox} from './character.js?v=trial-20261120-2';
-import {dressCity} from './city-dressing.js?v=trial-20261120-2';
-import {createGardens} from './gardens.js?v=trial-20261120-2';
-import {plantBorders,loadGardenModels} from './planted-borders.js?v=trial-20261120-2';
-import {createAwakening} from './awakening.js?v=trial-20261120-2';
-import {createCarousel,bakeMeshes} from './carousel-world.js?v=trial-20261120-2';
-import {createFestivalReveal} from './festival-reveal.js?v=trial-20261120-2';
+import {createStarfox} from './character.js?v=trial-20261120-3';
+import {dressCity} from './city-dressing.js?v=trial-20261120-3';
+import {createGardens} from './gardens.js?v=trial-20261120-3';
+import {plantBorders,loadGardenModels} from './planted-borders.js?v=trial-20261120-3';
+import {createAwakening} from './awakening.js?v=trial-20261120-3';
+import {createCarousel,bakeMeshes} from './carousel-world.js?v=trial-20261120-3';
+import {createFestivalReveal} from './festival-reveal.js?v=trial-20261120-3';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 const V=(x,y,z)=>new T.Vector3(x,y,z), TAU=Math.PI*2;
@@ -32,6 +32,7 @@ export async function createWorld(scene,renderer,quality='high'){
     diffuseColor.rgb*=.88+grain*.08-vein*.08;`);};
   function glow(color,stage=2,power=3){const m=mat(0x778797,.25,.52);m.emissive=new T.Color(color);m.emissiveIntensity=power;lightMats.push({m,stage,power});return m;}
   const amber1=glow(0xffbc61,1,2.8),cyan1=glow(0x5de3f5,1,2.1),amber2=glow(0xffc578,2,2.5),pink=glow(0xf56db3,2,1.5),cyan=glow(0x73e7fa,2,2.0),violet=glow(0xbfa0ff,2,2.0);
+  for(const m of [amber1,cyan1,amber2,pink,cyan,violet])m.userData.detailLight=true;
   function mesh(g,m,p=[0,0,0],parent=staticRoot){const o=new T.Mesh(g,m);o.position.set(...p);o.castShadow=!m.transparent;o.receiveShadow=true;parent.add(o);return o;}
   function tube(points,r,m,parent=staticRoot,segments=64){return mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points),segments,r,8,false),m,[0,0,0],parent);}
   function ring(x,y,z,r,m,thick=.025,parent=staticRoot){const o=mesh(new T.TorusGeometry(r,thick,8,96),m,[x,y,z],parent);o.rotation.x=Math.PI/2;return o;}
@@ -76,7 +77,31 @@ export async function createWorld(scene,renderer,quality='high'){
   const petalMaterials=[petalMaterial(0x8c82ff),petalMaterial(0xeb84cc),petalMaterial(0x66d9f1)];
   function flower(parent,scale=1,animated=false){const root=new T.Group();root.scale.setScalar(scale);parent.add(root);for(let layer=0;layer<2;layer++){const count=layer?8:10,length=layer?2.7:4.1,width=layer?.68:1.05,rise=layer?4.6:2.85;const g=petalGeometry(length,width,rise);for(let i=0;i<count;i++){const pivot=new T.Group();pivot.rotation.y=i/count*TAU+layer*.25;root.add(pivot);const part=new T.Group();pivot.add(part);mesh(g,petalMaterials[(i+layer)%3],[0,0,0],part);for(const side of [-1,1]){let points=[];for(let k=0;k<=36;k++){const t=k/36;points.push(V(side*Math.pow(Math.sin(Math.PI*t),.72)*width,rise*t+.55*Math.sin(Math.PI*t),length*Math.pow(t,1.45)));}tube(points,.022,layer?amber2:violet,part,40);}const center=[];for(let k=0;k<=32;k++){const t=k/32;center.push(V(0,rise*t+.025,length*Math.pow(t,1.45)));}tube(center,.014,amber2,part,32);if(animated){bakeMeshes(part);petals.push({part,layer});}}}
     const core=new T.Group();root.add(core);    const heart=mesh(new T.SphereGeometry(.64,24,32),amber2,[0,2,0],core);heart.scale.set(.7,1.9,.7);for(let i=0;i<9;i++){const a=i/9*TAU;tube([V(0,.2,0),V(Math.sin(a)*.55,1.8,Math.cos(a)*.55),V(Math.sin(a)*.3,3.4,Math.cos(a)*.3)],.025,amber2,core,30);}bakeMeshes(core);core.updateMatrix();core.matrixAutoUpdate=false;return root;}
-  flower(flowerRoot,1.15,true);
+  const animatedFlower=flower(flowerRoot,1.15,true),petalBatches=new Map(),petalMatrix=new T.Matrix4();
+  for(const {part,layer}of petals){
+    part.parent.updateMatrix();part.parent.matrixAutoUpdate=false;
+    for(const mesh of [...part.children]){
+      const key=layer+':'+mesh.material.uuid;
+      if(!petalBatches.has(key))petalBatches.set(key,{geometry:mesh.geometry,material:mesh.material,parts:[]});
+      const batch=petalBatches.get(key);batch.parts.push(part);mesh.removeFromParent();
+      if(mesh.geometry!==batch.geometry)mesh.geometry.dispose();
+    }
+  }
+  for(const batch of petalBatches.values()){
+    const mesh=new T.InstancedMesh(batch.geometry,batch.material,batch.parts.length);mesh.name='fountain-petals';
+    mesh.castShadow=mesh.receiveShadow=true;mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);mesh.matrixAutoUpdate=false;
+    batch.mesh=mesh;animatedFlower.add(mesh);
+  }
+  function updatePetalInstances(){
+    for(const {part}of petals)part.updateMatrix();
+    for(const {mesh,parts}of petalBatches.values()){
+      for(let i=0;i<parts.length;i++)mesh.setMatrixAt(i,petalMatrix.multiplyMatrices(parts[i].parent.matrix,parts[i].matrix));
+      mesh.instanceMatrix.needsUpdate=true;
+    }
+  }
+  updatePetalInstances();
+  for(const {mesh}of petalBatches.values()){mesh.computeBoundingSphere();mesh.boundingSphere.radius+=2;}
+  for(const {part}of petals)part.parent.removeFromParent();
   const fountainJets=new T.ShaderMaterial({transparent:true,depthWrite:false,blending:T.AdditiveBlending,uniforms:{time:{value:0},light:{value:1}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 vUv;uniform float time;uniform float light;void main(){float bead=pow(.5+.5*sin(vUv.x*100.-time*6.),12.);float edge=.25+.75*pow(abs(sin(vUv.y*3.14159)),2.);vec3 color=mix(vec3(.25,.75,.9),vec3(1.,.85,.65),bead);gl_FragColor=vec4(color*(1.+bead),(.25+.65*bead)*edge*light);}' });
   const jetParts=[];for(let i=0;i<24;i++){const a=i/24*TAU,dx=Math.sin(a),dz=Math.cos(a);const c=new T.QuadraticBezierCurve3(V(dx*4.1,1.83,-8+dz*4.1),V(dx*3.7,4.5,-8+dz*3.7),V(dx*2.8,1.9,-8+dz*2.8));jetParts.push(new T.TubeGeometry(c,36,.022,5,false));}const jetMesh=new T.Mesh(mergeGeometries(jetParts),fountainJets);scene.add(jetMesh);
   const splash=glow(0x9ce5ed,2,1.15);lightMats.at(-1).mission=2;
@@ -138,9 +163,9 @@ export async function createWorld(scene,renderer,quality='high'){
   const normalSize=128,data=new Uint8Array(normalSize*normalSize*4);for(let y=0;y<normalSize;y++)for(let x=0;x<normalSize;x++){const i=(y*normalSize+x)*4,u=x/normalSize*TAU,v=y/normalSize*TAU;data[i]=128+Math.sin(u*5+Math.cos(v*3)) *26;data[i+1]=128+Math.cos(v*7+Math.sin(u*2))*24;data[i+2]=244;data[i+3]=255;}
   const normals=new T.DataTexture(data,normalSize,normalSize);normals.wrapS=normals.wrapT=T.RepeatWrapping;normals.magFilter=normals.minFilter=T.LinearFilter;normals.needsUpdate=true;
   const water=new Water(new T.PlaneGeometry(350,350),{textureWidth:1536,textureHeight:1536,waterNormals:normals,sunDirection:moon.position.clone().normalize(),sunColor:0x8199c9,waterColor:0x0a2030,distortionScale:.26,alpha:1,fog:true});water.rotation.x=-Math.PI/2;water.position.y=.03;scene.add(water);water.material.uniforms.size.value=5;
-  let lightQuality=quality==='light',lastReflection=-Infinity,reflectionFrames=0;
+  let lightQuality=quality==='light',lastReflection=-Infinity,reflectionFrames=0,deferReflection=false;
   const reflectionPosition=new T.Vector3(Infinity,Infinity,Infinity),reflectionRotation=new T.Quaternion(),reflect=water.onBeforeRender;
-  water.onBeforeRender=function(renderer,scene,camera){const now=performance.now(),distance=reflectionPosition.distanceToSquared(camera.position),rotation=Math.abs(reflectionRotation.dot(camera.quaternion)),jumped=distance>4||rotation<.98,movingView=distance>.0025||rotation<.99999;if(lightQuality&&!jumped&&now-lastReflection<(movingView?1000/12:200))return;reflect.call(this,renderer,scene,camera);reflectionFrames++;lastReflection=now;reflectionPosition.copy(camera.position);reflectionRotation.copy(camera.quaternion);};
+  water.onBeforeRender=function(renderer,scene,camera){const now=performance.now(),distance=reflectionPosition.distanceToSquared(camera.position),rotation=Math.abs(reflectionRotation.dot(camera.quaternion)),jumped=distance>4||rotation<.98,movingView=distance>.0025||rotation<.99999;if(lightQuality&&!jumped&&((deferReflection&&now-lastReflection<(movingView?150:300))||now-lastReflection<(movingView?1000/12:200)))return;reflect.call(this,renderer,scene,camera);reflectionFrames++;lastReflection=now;reflectionPosition.copy(camera.position);reflectionRotation.copy(camera.quaternion);};
   const sparksG=new T.BufferGeometry(),sparkPos=[],sparkSeed=[];for(let i=0;i<260;i++){const a=random()*TAU,r=2+random()*26;sparkPos.push(Math.cos(a)*r,1+random()*10,-7+Math.sin(a)*r);sparkSeed.push(random());}sparksG.setAttribute('position',new T.Float32BufferAttribute(sparkPos,3));sparksG.setAttribute('phase',new T.Float32BufferAttribute(sparkSeed,1));
   const sparksM=new T.ShaderMaterial({transparent:true,depthWrite:false,blending:T.AdditiveBlending,uniforms:{time:{value:0},strength:{value:1},pixelRatio:{value:1}},vertexShader:'attribute float phase;uniform float time;uniform float pixelRatio;varying float alpha;void main(){vec3 p=position;p.y+=sin(time*.3+phase*20.)*.4;p.x+=cos(time*.2+phase*9.)*.17;vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp(70./-mv.z,1.,5.)*pixelRatio;alpha=.35+.65*pow(.5+.5*sin(time+phase*40.),3.);}',fragmentShader:'uniform float strength;varying float alpha;void main(){float d=length(gl_PointCoord-.5)*2.;gl_FragColor=vec4(1.8,1.4,.7,pow(max(0.,1.-d),2.)*alpha*strength);}'});scene.add(new T.Points(sparksG,sparksM));
   const hero=character.hero;hero.position.copy(nodes[22]);scene.add(hero);
@@ -155,7 +180,8 @@ export async function createWorld(scene,renderer,quality='high'){
   missionPads.name='mission-pads';missionPads.frustumCulled=false;
   missionSites.forEach((s,i)=>{padTransform.position.copy(s.position);padTransform.position.y+=.04;padTransform.rotation.x=-Math.PI/2;padTransform.updateMatrix();missionPads.setMatrixAt(i,padTransform.matrix);missionPads.setColorAt(i,new T.Color(.08,.14,.16));});scene.add(missionPads);
   const missionWave=new T.Mesh(new T.RingGeometry(.94,1,64),new T.MeshBasicMaterial({color:0xffdb9a,transparent:true,opacity:0,depthWrite:false,toneMapped:false}));missionWave.rotation.x=-Math.PI/2;missionWave.visible=false;scene.add(missionWave);
-  let padState='';function setMissionLights(levels,active){const key=levels.join(':')+':'+active;if(key===padState)return;padState=key;levels.forEach((v,i)=>{padColor.setRGB(.08+v*1.4,.14+v*.85,.16+v*.32);if(i===active)padColor.setRGB(.45,.85,.74);missionPads.setColorAt(i,padColor);});missionPads.instanceColor.needsUpdate=true;const fresh=levels.findIndex(v=>v>0&&v<1);missionWave.visible=fresh>=0;if(fresh>=0){const v=levels[fresh];missionWave.position.copy(missionSites[fresh].position);missionWave.position.y+=.07;missionWave.scale.setScalar(.8+v*6);missionWave.material.opacity=Math.sin(v*Math.PI)*.65;missionWave.updateMatrix();}}
+  let padActive=-2;const padLevels=Array(10).fill(-1);
+  function setMissionLights(levels,active){let changed=active!==padActive;for(let i=0;i<levels.length;i++)if(levels[i]!==padLevels[i])changed=true;if(!changed)return;padActive=active;levels.forEach((v,i)=>{padLevels[i]=v;padColor.setRGB(.08+v*1.4,.14+v*.85,.16+v*.32);if(i===active)padColor.setRGB(.45,.85,.74);missionPads.setColorAt(i,padColor);});missionPads.instanceColor.needsUpdate=true;const fresh=levels.findIndex(v=>v>0&&v<1);missionWave.visible=fresh>=0;if(fresh>=0){const v=levels[fresh];missionWave.position.copy(missionSites[fresh].position);missionWave.position.y+=.07;missionWave.scale.setScalar(.8+v*6);missionWave.material.opacity=Math.sin(v*Math.PI)*.65;missionWave.updateMatrix();}}
   const plazas=[{x:0,z:-8,y:1.2,inner:5.15,outer:7.65},{x:-25,z:14,y:1.2,inner:6.6,outer:7.95}];
   const floorRay=new T.Raycaster(),floorOrigin=new T.Vector3(),floorDown=V(0,-1,0),floorHits=[],nearFloor=[];
   const walkBounds=walkMeshes.map(mesh=>{mesh.geometry.computeBoundingBox();return new T.Box3().copy(mesh.geometry.boundingBox).applyMatrix4(mesh.matrixWorld);});
@@ -170,20 +196,24 @@ export async function createWorld(scene,renderer,quality='high'){
   }
   const festival=createFestivalReveal(scene);
   const guideLight=new T.PointLight(0xcce6ff,5,7,2);scene.add(guideLight);
-  let current=2;let moving=false;
+  let current=2;let moving=false,lastLightGame=null,lastFirst=-1,lastFull=-1;
   function update(time,dt,state,reduceMotion=false){
     cameraFocus.value.copy(hero.position);cameraFocus.value.y+=1.4;
     current=T.MathUtils.damp(current,state,2.1,dt);
     const game=awakening.enabled,progress=awakening.progress;
     const first=game?Math.max(progress[0],progress[1]):smooth(.05,.95,current),full=game?progress[2]:smooth(1.05,1.95,current);
-    for(const {m,stage,power}of lightMats)m.emissiveIntensity=power*(game?1:stage===1?first:full);
+    if(game!==lastLightGame||first!==lastFirst||full!==lastFull){
+      for(const {m,stage,power}of lightMats)m.emissiveIntensity=power*(game?1:stage===1?first:full);
+      ambient.intensity=game?.24+first*.10+full*.23:.4+full*.35;moon.intensity=game?.40+full*.20:.85;
+      lastLightGame=game;lastFirst=first;lastFull=full;
+    }
     warm.intensity=game?progress[1]*45:first*65;flowerLight.intensity=full*85;entranceLight.intensity=game?progress[0]*22:2+full*24;
-    ambient.intensity=game?.24+first*.10+full*.23:.4+full*.35;moon.intensity=game?.40+full*.20:.85;
     guideLight.intensity=game?3+festival.energy*32:0;guideLight.color.set(festival.energy>0?0xffd49b:0xcce6ff);guideLight.position.set(hero.position.x-2,hero.position.y+4,hero.position.z+2);
     curtainMaterial.uniforms.time.value=reduceMotion?0:time;curtainMaterial.uniforms.light.value=full;water.material.uniforms.time.value=reduceMotion?0:time*.23;
     for(const o of auroras){o.visible=full>0;const m=o.material;m.uniforms.strength.value=full*.65;m.uniforms.time.value=reduceMotion?0:time;}
     sparksM.uniforms.time.value=reduceMotion?0:time;sparksM.uniforms.strength.value=.02+full*.98;sparksM.uniforms.pixelRatio.value=renderer.getPixelRatio();
     for(const p of petals)p.part.rotation.x=(1-full)*-.4+(reduceMotion?0:Math.sin(time*.35+p.layer)*.008*full);
+    updatePetalInstances();
     wisp.position.set(hero.position.x+.85,hero.position.y+1.6+(reduceMotion?0:Math.sin(time*1.8)*.12),hero.position.z-.3);halo.position.copy(wisp.position);hero.position.y=(hero.userData.baseY||1.2);
     awakening.update(reduceMotion?0:time,renderer.getPixelRatio());
     if(!game)carousel.setLight(full);carousel.update(time,dt,reduceMotion);
@@ -191,7 +221,9 @@ export async function createWorld(scene,renderer,quality='high'){
   }
   function snap(state){current=state;update(0,1,state,true);}
   const updateScene=update;function updateWithHero(time,dt,state,reduceMotion){updateScene(time,dt,state,reduceMotion);fountainJets.uniforms.light.value=awakening.enabled?awakening.progress[2]:smooth(1.05,1.95,current);fountainJets.uniforms.time.value=reduceMotion?0:time;jetMesh.visible=fountainJets.uniforms.light.value>0;contact.position.set(hero.position.x,(hero.userData.baseY||1.2)+.025,hero.position.z);character.update(dt,moving,reduceMotion);}
-  function setQuality(v){lightQuality=v==='light';lastReflection=-Infinity;water.getRenderTarget().setSize(lightQuality?512:1536,lightQuality?512:1536);const size=lightQuality?1024:2048;if(moon.shadow.mapSize.x!==size){moon.shadow.map?.dispose();moon.shadow.map=null;moon.shadow.mapSize.set(size,size);renderer.shadowMap.needsUpdate=true;}}
+  const detailCasters=[],gardenMeshes=[];scene.traverse(o=>{if(o.isMesh&&o.castShadow&&o.material.userData?.detailLight)detailCasters.push(o);if(o.userData.lightGeometry)gardenMeshes.push(o);});
+  function setQuality(v){lightQuality=v==='light';lastReflection=-Infinity;for(const o of detailCasters)o.castShadow=!lightQuality;for(const o of gardenMeshes)o.geometry=lightQuality?o.userData.lightGeometry:o.userData.highGeometry;water.getRenderTarget().setSize(lightQuality?512:1536,lightQuality?512:1536);const size=lightQuality?1024:2048;if(moon.shadow.mapSize.x!==size){moon.shadow.map?.dispose();moon.shadow.map=null;moon.shadow.mapSize.set(size,size);renderer.shadowMap.needsUpdate=true;}}
+  for(const o of [moon,ambient,warm,flowerLight,entranceLight,flowerRoot,animatedFlower,sky,moonDisc,water,jetMesh,missionPads,...auroras]){o.updateMatrix();o.matrixAutoUpdate=false;}
   setQuality(quality);
-  return {floorBlocked,cameraFollowing,nodes,edges,plazas,obstacles,onPath,missionSites,setMissionLights,hero,walkMeshes,water,gardenStats,stations,awakening,carousel,festival,carouselStation,update:updateWithHero,snap,setQuality,setMoving(v){moving=v;},get reflectionFrames(){return reflectionFrames;},get current(){return current;}};
+  return {floorBlocked,cameraFollowing,nodes,edges,plazas,obstacles,onPath,missionSites,setMissionLights,hero,walkMeshes,water,gardenStats,stations,awakening,carousel,festival,carouselStation,update:updateWithHero,snap,setQuality,beginFrame(shadowRefresh){deferReflection=shadowRefresh;},setMoving(v){moving=v;},get reflectionFrames(){return reflectionFrames;},get current(){return current;}};
 }

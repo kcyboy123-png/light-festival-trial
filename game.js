@@ -1,8 +1,8 @@
-import {MISSIONS,TEN_SAVE_KEY,freshTenProgress,restoreTenProgress,checkCompletion} from './mission-model.js?v=trial-20261120-2';
-import {BRIEFS} from './mission-guide.js?v=trial-20261120-2';
-import {createMissionPanel} from './mission-panel.js?v=trial-20261120-2';
-import {TIERS,scoreResult,recordWrong} from './score.js?v=trial-20261120-2';
-import {festivalTiming} from './festival-timing.js?v=trial-20261120-2';
+import {MISSIONS,TEN_SAVE_KEY,freshTenProgress,restoreTenProgress,checkCompletion} from './mission-model.js?v=trial-20261120-3';
+import {BRIEFS} from './mission-guide.js?v=trial-20261120-3';
+import {createMissionPanel} from './mission-panel.js?v=trial-20261120-3';
+import {TIERS,scoreResult,recordWrong} from './score.js?v=trial-20261120-3';
+import {festivalTiming} from './festival-timing.js?v=trial-20261120-3';
 
 export function createGame(world,{travel,resume,goView,project,reduceMotion,showReward=()=>{}}){
   const $=s=>document.querySelector(s),sites=world.missionSites;

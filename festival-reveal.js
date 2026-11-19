@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {festivalTiming,FESTIVAL_SECONDS} from './festival-timing.js?v=trial-20261120-2';
+import {festivalTiming,FESTIVAL_SECONDS} from './festival-timing.js?v=trial-20261120-3';
 
 // One fixed particle buffer and two ground meshes; no per-frame particle allocation or extra shadow maps.
 export function createFestivalReveal(scene){
@@ -40,10 +40,10 @@ export function createFestivalReveal(scene){
     fragmentShader:'uniform float time,finale;varying vec2 vUv;void main(){float stream=.35+.65*pow(.5+.5*sin(vUv.x*25.-time*3.),3.);float edge=pow(max(0.,1.-abs(vUv.y*2.-1.)),1.5);float a=edge*sin(vUv.x*3.14159)*stream*finale*.65;vec3 c=mix(vec3(1.9,1.2,.4),vec3(.25,1.1,1.6),vUv.x);gl_FragColor=vec4(c,a);}'});
   group.add(new T.Mesh(ribbonG,ribbonM));
 
-  let progress=1;
+  let progress=-1;
   return {
     async prepare(renderer,camera){const visible=group.visible;group.visible=true;try{await renderer.compileAsync(scene,camera);}finally{group.visible=visible;}},
-    set(t,position,running,reduced){progress=t;const phase=festivalTiming(t);origin.value.copy(position);origin.value.y=1.25;time.value=t*FESTIVAL_SECONDS;radius.value=phase.radius;charge.value=phase.charge;finale.value=phase.finale;fade.value=phase.fade;active.value=running&&!reduced?1:0;group.visible=active.value===1;},
+    set(t,position,running,reduced){const nextActive=running&&!reduced?1:0;if(progress===t&&active.value===nextActive&&origin.value.x===position.x&&origin.value.z===position.z)return;progress=t;const phase=festivalTiming(t);origin.value.copy(position);origin.value.y=1.25;time.value=t*FESTIVAL_SECONDS;radius.value=phase.radius;charge.value=phase.charge;finale.value=phase.finale;fade.value=phase.fade;active.value=nextActive;group.visible=active.value===1;},
     update(dpr){pixelRatio.value=dpr;},
     get energy(){return active.value*(charge.value+finale.value*.6);},
     get state(){return {progress,active:!!active.value,origin:origin.value.toArray(),radius:radius.value,particles:count,finale:finale.value};}

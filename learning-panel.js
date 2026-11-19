@@ -1,9 +1,9 @@
-import {studioBulb,diagramBulb,diagramSwitch,diagramMaterial} from './diagram-art.js?v=trial-20261120-2';
-import {labScene} from './lab-art.js?v=trial-20261120-2';
-import {LABS,CIRCUIT_QUESTIONS,LAB_QUESTIONS,circuitKey,labState,labPassed,labHint} from './inquiry-model.js?v=trial-20261120-2';
-import {MISSIONS,simulate,freshDraft} from './mission-model.js?v=trial-20261120-2';
-import {bulbArt,compactCell} from './circuit-art.js?v=trial-20261120-2';
-import {circuitPicture} from './circuit-choices.js?v=trial-20261120-2';
+import {studioBulb,diagramBulb,diagramSwitch,diagramMaterial} from './diagram-art.js?v=trial-20261120-3';
+import {labScene} from './lab-art.js?v=trial-20261120-3';
+import {LABS,CIRCUIT_QUESTIONS,LAB_QUESTIONS,circuitKey,labState,labPassed,labHint} from './inquiry-model.js?v=trial-20261120-3';
+import {MISSIONS,simulate,freshDraft} from './mission-model.js?v=trial-20261120-3';
+import {bulbArt,compactCell} from './circuit-art.js?v=trial-20261120-3';
+import {circuitPicture} from './circuit-choices.js?v=trial-20261120-3';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}

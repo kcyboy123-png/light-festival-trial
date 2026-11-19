@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {softenOccluder} from './camera-visibility.js?v=trial-20261120-2';
+import {softenOccluder} from './camera-visibility.js?v=trial-20261120-3';
 
 // Shared petal meshes keep dense botanical detail practical in the reflection pass too.
 export function createGardens(scene, {root, mesh, tube, cyl, ring, arch, mat, glow, stone, gold, trim, soil, amber, violet, petalGeometry, random, cameraFocus, cameraFollowing}) {
@@ -18,6 +18,7 @@ export function createGardens(scene, {root, mesh, tube, cyl, ring, arch, mat, gl
     g.computeVertexNormals();return g;
   }
   const leafG=blade(.62,.19,.23,9,6),smallG=blade(.16,.07,.06,7,6),largeG=blade(.52,.22,.19,12,8);
+  const lightGeometry=new Map([[leafG,blade(.62,.19,.23,6,4)],[smallG,blade(.16,.07,.06,5,4)],[largeG,blade(.52,.22,.19,8,6)]]);
   for(const m of [...foliage,...blossoms,...opals]){
     m.envMapIntensity=.5;
     m.onBeforeCompile=s=>{s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying vec2 leafUV;').replace('#include <begin_vertex>','#include <begin_vertex>\nleafUV=uv;');s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 leafUV;').replace('#include <color_fragment>',`#include <color_fragment>
@@ -219,7 +220,9 @@ export function createGardens(scene, {root, mesh, tube, cyl, ring, arch, mat, gl
   }
   let instances=0;
   for(const {g,m,transforms}of batches.values()){
-    const o=new T.InstancedMesh(g,m,transforms.length);transforms.forEach((matrix,i)=>o.setMatrixAt(i,matrix));o.castShadow=true;o.receiveShadow=true;o.computeBoundingSphere();o.updateMatrix();o.matrixAutoUpdate=false;scene.add(o);instances+=transforms.length;
+    const o=new T.InstancedMesh(g,m,transforms.length);transforms.forEach((matrix,i)=>o.setMatrixAt(i,matrix));o.castShadow=true;o.receiveShadow=true;o.computeBoundingSphere();
+    if(lightGeometry.has(g)){o.userData.highGeometry=g;o.userData.lightGeometry=lightGeometry.get(g);o.boundingSphere.radius+=.05;}
+    o.updateMatrix();o.matrixAutoUpdate=false;scene.add(o);instances+=transforms.length;
   }
   return {instances,trees:4,flowerbeds:4,terraces:6,plantedIslands:7,accentPatches:patches.length,facadeRosettes:30,waterGardens:3};
 }
