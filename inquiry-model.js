@@ -23,7 +23,7 @@ export function freshLab(){return {actions:[],answer:null};}
 const allowed=[['coil','permanent','switch','lift','move'],['cells','core','compare','lift'],['switch','reverse','test'],['inspect','repair','bulb','path','room','dry','head','split','check']];
 export function validLab(i,d){return !!d&&Array.isArray(d.actions)&&d.actions.length<=160&&d.actions.every(a=>allowed[i-6].includes(a))&&(d.answer===null||LAB_QUESTIONS[i-6].choices.some(([id])=>id===d.answer));}
 export function labState(i,d){
- const s={tool:'coil',on:false,right:false,held:false,delivered:false,cells:1,sameCore:true,compared:false,lifted:false,reversed:false,attract:false,quiet:false,repel:false,path:false,room:true,dry:false,head:false,split:false,checked:false,inspected:false,repaired:false,message:''};
+ const s={tool:'coil',on:false,right:false,held:false,delivered:false,cells:1,sameCore:true,compared:false,lifted:false,reversed:false,carX:400,attract:false,quiet:false,repel:false,path:false,room:true,dry:false,head:false,split:false,checked:false,inspected:false,repaired:false,message:''};
  for(const a of d.actions){
   if(i===6){
    if(a==='coil'||a==='permanent'){s.tool=a;s.held=false;s.message='장치를 골랐어요. 철 장식을 들어 보세요.';}
@@ -40,7 +40,7 @@ export function labState(i,d){
   if(i===8){
    if(a==='switch')s.on=!s.on;
    if(a==='reverse')s.reversed=!s.reversed;
-   if(a==='test'){if(!s.on){s.quiet=true;s.message='전기가 끊기면 자동차를 끌거나 밀지 않아요.';}else if(s.reversed){s.repel=true;s.message='마주 보는 극이 같아져 자동차를 밀어냈어요.';}else{s.attract=true;s.message='마주 보는 극이 달라 자동차가 끌려와요.';}}
+   if(a==='test'){if(!s.on){s.quiet=true;s.message='전기가 끊기면 자동차를 끌거나 밀지 않아요.';}else if(s.reversed){s.repel=true;s.carX=485;s.message='마주 보는 극이 같아져 자동차를 밀어냈어요.';}else{s.attract=true;s.carX=300;s.message='마주 보는 극이 달라 자동차가 끌려와요.';}}
   }
   if(i===9){
    if(a==='inspect'){s.inspected=true;s.message='같은 전구: 전지 한 개에서는 켜짐, 지금 두 개에서는 꺼짐. 전구는 정상이었어요.';}
