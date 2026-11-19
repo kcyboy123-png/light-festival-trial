@@ -3,9 +3,9 @@ export const TEN_SAVE_KEY='changyong-light-festival-ten-v2';
 export const MISSIONS=[
   {title:'꽃길 가로등',task:'끊긴 곳을 이어 전구를 켜요.',bulbs:1,switches:0,kind:'light',wires:[['a2','n']],hint:'전지의 두 끝과 전구의 두 연결점이 한 바퀴 이어져야 해요.',lesson:'전선이 끊김 없이 이어지면 전구에 불이 켜져요.'},
   {title:'꽃터널',task:'위로 열린 스위치 막대를 눌러 전구를 켜요.',bulbs:1,switches:1,kind:'switch',wires:[['p','s1'],['s2','a1'],['a2','n']],open:true,hint:'스위치 막대가 두 금속점을 이어 주는지 보세요.',lesson:'스위치를 닫으면 이어지고, 열면 전기가 흐르지 않아요.'},
-  {title:'다리 입구',task:'전지 → 스위치 → 전구 → 전지로 돌아오는 길을 만들어요.',bulbs:1,switches:1,kind:'switch',wires:[],hint:'전지 → 스위치 → 전구 → 전지로 돌아오는 길을 생각해요.',lesson:'전구가 켜져도 스위치를 거치지 않으면 스위치로 끌 수 없어요.'},
-  {title:'다리 정원',task:'전기가 통하는 재료를 고르고, 끊긴 곳을 이어요.',bulbs:1,switches:0,material:true,kind:'material',wires:[['p','m1'],['a2','n']],hint:'구리·플라스틱·고무 중 전기가 통하는 재료는 무엇일까요?',lesson:'구리처럼 전기가 잘 통하는 재료를 도체라고 해요.'},
-  {title:'별빛 정원',task:'전구를 건너뛰는 전선을 고치고, 스위치도 작동하게 해요.',bulbs:1,switches:1,kind:'switch',wires:[['p','s1'],['a2','n'],['p','n']],hint:'전지의 두 극이 전구 없이 바로 이어져 있지 않나요?',lesson:'전구를 거치지 않고 전지의 두 극을 바로 잇는 합선은 피해야 해요.'},
+  {title:'다리 입구',task:'전지 → 스위치 → 전구 → 전지로 돌아오는 길을 만들어요.',bulbs:1,switches:1,kind:'switch',wires:[['a2','n']],hint:'전지 → 스위치 → 전구 → 전지로 돌아오는 길을 생각해요.',lesson:'전구가 켜져도 스위치를 거치지 않으면 스위치로 끌 수 없어요.'},
+  {title:'다리 정원',task:'전기가 통하는 재료를 고르고, 끊긴 곳을 이어요.',bulbs:1,switches:0,material:true,kind:'material',wires:[['p','m1']],hint:'구리·플라스틱·고무 중 전기가 통하는 재료는 무엇일까요?',lesson:'구리처럼 전기가 잘 통하는 재료를 도체라고 해요.'},
+  {title:'별빛 정원',task:'전구를 건너뛰는 전선을 고치고, 스위치도 작동하게 해요.',bulbs:1,switches:1,kind:'switch',wires:[['p','s1'],['p','n']],hint:'전지의 두 극이 전구 없이 바로 이어져 있지 않나요?',lesson:'전구를 거치지 않고 전지의 두 극을 바로 잇는 합선은 피해야 해요.'},
   {title:'분수 서쪽',task:'전지 두 개를 직렬로 연결해 한 개일 때보다 밝게 켜요.',bulbs:1,switches:1,kind:'cells',cellChoice:true,flipped:true,wires:[['p','s1'],['a2','n']],hint:'전지 두 개 사이에는 서로 다른 극이 만나야 해요. 스위치를 지나는 길도 이어요.',lesson:'같은 전지 두 개를 직렬로 바르게 연결하면 같은 전구가 더 밝아져요.'},
   {title:'꽃잎 분수',task:'전구 두 개를 한 줄로 이어요. 하나를 빼면 둘 다 꺼져야 해요.',bulbs:2,switches:1,kind:'series',cells:2,wires:[['p','s1'],['s2','a1'],['a2','n']],hint:'전기가 A를 지난 뒤 B도 지나야 해요. 돌아가는 길이 하나인가요?',lesson:'전구를 직렬로 연결하면 길이 하나라서 하나를 빼면 모두 꺼져요.'},
   {title:'분수 정원',task:'전구 하나를 빼도 다른 전구는 같은 밝기로 켜지게 해요.',bulbs:2,switches:1,kind:'parallel',wires:[['p','s1'],['s2','a1'],['a2','b1'],['b2','n']],hint:'각 전구가 전지의 두 극으로 이어지는 자기 길을 갖게 해요.',lesson:'병렬 연결에서는 한쪽 길이 끊겨도 다른 쪽 길로 전기가 흘러요.'},
