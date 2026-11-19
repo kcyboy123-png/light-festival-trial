@@ -1,4 +1,4 @@
-import {simulate,checkMission,terminals} from './mission-model.js?v=trial-20261119-7';
+import {simulate,checkMission,terminals} from './mission-model.js?v=trial-20261119-8';
 
 // Situation first; hints reveal the idea before naming a possible repair.
 export const BRIEFS=[

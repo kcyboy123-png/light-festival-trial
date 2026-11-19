@@ -1,5 +1,5 @@
-import {MISSIONS as OLD,restoreTenProgress as restoreOld} from './legacy-mission-model.js?v=trial-20261119-7';
-import {LABS,freshLab,validLab,labPassed,hasEvidence} from './inquiry-model.js?v=trial-20261119-7';
+import {MISSIONS as OLD,restoreTenProgress as restoreOld} from './legacy-mission-model.js?v=trial-20261119-8';
+import {LABS,freshLab,validLab,labPassed,hasEvidence} from './inquiry-model.js?v=trial-20261119-8';
 export const TEN_SAVE_KEY='changyong-light-festival-ten-v2';
 
 export const MISSIONS=[...OLD.slice(0,6),...LABS];

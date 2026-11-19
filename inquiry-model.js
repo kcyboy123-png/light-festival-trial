@@ -3,7 +3,7 @@ export const LABS=[
  {title:'꽃잎 분수',kind:'magnet',task:'철 장식을 들어 바구니에 내려놓아요.',lesson:'전자석은 전기가 흐를 때 철을 붙잡고, 끊으면 놓을 수 있어요.'},
  {title:'분수 정원',kind:'strength',task:'같은 전자석으로 비교하고, 무거운 장식을 들어요.',lesson:'같은 전자석에 전지를 두 개 직렬연결하면 세기가 더 세져요.'},
  {title:'회전목마 꽃길',kind:'poles',task:'붙어 오는 자석 자동차를 반대쪽으로 보내요.',lesson:'전지의 연결 방향을 바꾸면 전자석의 양쪽 극이 바뀌어요.'},
- {title:'회전목마 광장',kind:'safe',task:'사람이 있는 곳은 밝게, 빈 곳은 알뜰하고 안전하게.',lesson:'필요한 곳을 밝히고 낭비와 위험을 줄이면 안전한 축제가 돼요.'}
+ {title:'회전목마 광장',kind:'safe',task:'꺼진 등을 고치고, 필요한 불과 안전을 점검해요.',lesson:'필요한 곳을 밝히고 낭비와 위험을 줄이면 안전한 축제가 돼요.'}
 ];
 export const CIRCUIT_QUESTIONS={
  2:{predict:'지금 회로에서 스위치를 열면?',predictions:['불이 꺼질 것 같아요','계속 켜질 것 같아요'],ask:'스위치를 열었을 때 불이 꺼진 까닭은?',choices:[['gap','전기가 지나는 길이 끊어져서'],['used','전지가 한 번 만에 다 닳아서'],['light','전구가 다른 종류로 바뀌어서']],answer:'gap',hint:'스위치의 두 금속점 사이를 살펴보세요.'},
@@ -26,20 +26,21 @@ export function labState(i,d){
  const s={tool:'coil',on:false,right:false,held:false,delivered:false,cells:1,sameCore:true,compared:false,lifted:false,reversed:false,carX:400,attract:false,quiet:false,repel:false,path:false,room:true,dry:false,head:false,split:false,checked:false,inspected:false,repaired:false,message:''};
  for(const a of d.actions){
   if(i===6){
-   if(a==='coil'||a==='permanent'){s.tool=a;s.held=false;s.message='장치를 골랐어요. 철 장식을 들어 보세요.';}
+   // Keep saved device-change traces replayable; the UI guards changes while carrying.
+   if(a==='coil'||a==='permanent'){s.tool=a;s.held=false;s.message=s.delivered?'철 장식은 이미 바구니에 있어요. 관찰한 까닭을 골라요.':'장치를 골랐어요. 철 장식은 출발점에 있어요.';}
    if(a==='switch'){s.on=!s.on;if(!s.on&&s.tool==='coil'&&s.held){s.held=false;if(s.right)s.delivered=true;s.message=s.right?'전기를 끊자 장식이 바구니에 내려왔어요.':'전기를 끊자 장식이 출발점에 내려왔어요.';}else s.message=s.tool==='permanent'?'영구 자석은 스위치를 꺼도 자석 성질이 남아요.':s.on?'전기가 흘러 전자석이 되었어요.':'전기가 끊겨 자석 성질이 사라졌어요.';}
-   if(a==='lift'){s.held=!s.right&&(s.tool==='permanent'||s.on);s.message=s.held?'철 장식이 붙었어요. 바구니 쪽으로 옮겨요.':'출발점에서 자석의 성질이 생겼는지 살펴봐요.';}
+   if(a==='lift'){if(s.delivered)s.message='철 장식은 이미 바구니에 있어요. 관찰한 까닭을 골라요.';else if(s.held)s.message=s.right?'이미 붙잡고 있어요. 전기를 끊으면 어떻게 될까요?':'이미 붙잡고 있어요. 바구니 쪽으로 옮겨요.';else{s.held=!s.right&&(s.tool==='permanent'||s.on);s.message=s.held?'철 장식이 붙었어요. 바구니 쪽으로 옮겨요.':s.right?'장식은 출발점에 있어요. 출발점으로 돌아가요.':'아직 장식을 들지 못했어요. 스위치와 장치를 살펴봐요.';}}
    if(a==='move'){s.right=!s.right;s.message=s.right?'바구니 위예요. 장식을 놓을 방법을 찾아요.':'출발점으로 돌아왔어요.';}
   }
   if(i===7){
-   if(a==='cells'){s.cells=s.cells===1?2:1;s.compared=false;s.lifted=false;}
-   if(a==='core'){s.sameCore=!s.sameCore;s.compared=false;s.lifted=false;}
+   if(a==='cells'){s.cells=s.cells===1?2:1;s.compared=false;s.lifted=false;s.message='오른쪽 전지 수를 바꿨어요. 두 쪽 함께 시험을 눌러 다시 비교해요.';}
+   if(a==='core'){s.sameCore=!s.sameCore;s.compared=false;s.lifted=false;s.message=(s.sameCore?'같은 철심으로 돌아왔어요.':'오른쪽 철심의 굵기도 달라졌어요.')+' 두 쪽 함께 시험을 눌러 비교해요.';}
    if(a==='compare'){s.compared=s.sameCore&&s.cells===2;s.message=!s.sameCore?'철심도 달라졌어요. 전지 수 때문인지 구별할 수 없어요.':s.cells===1?'두 쪽 모두 전지 한 개예요. 차이를 비교할 조건을 바꿔요.':'같은 무거운 장식: 한 개는 들지 못하고, 두 개는 들어 올렸어요.';}
    if(a==='lift'){s.lifted=s.compared;s.message=s.lifted?'같은 조건으로 비교한 뒤 무거운 장식을 옮겼어요.':'먼저 전지 수만 다른 공정한 비교를 해 보세요.';}
   }
   if(i===8){
-   if(a==='switch')s.on=!s.on;
-   if(a==='reverse')s.reversed=!s.reversed;
+   if(a==='switch'){s.on=!s.on;s.message='스위치를 '+(s.on?'닫았어요.':'열었어요.')+' 자동차 움직임 시험을 눌러 확인해요.';}
+   if(a==='reverse'){s.reversed=!s.reversed;s.message='전지 방향을 바꿨어요. 자동차 움직임 시험을 눌러 확인해요.';}
    if(a==='test'){if(!s.on){s.quiet=true;s.message='전기가 끊기면 자동차를 끌거나 밀지 않아요.';}else if(s.reversed){s.repel=true;s.carX=485;s.message='마주 보는 극이 같아져 자동차를 밀어냈어요.';}else{s.attract=true;s.carX=300;s.message='마주 보는 극이 달라 자동차가 끌려와요.';}}
   }
   if(i===9){
@@ -56,3 +57,22 @@ export function labState(i,d){
  return s;
 }
 export function labPassed(i,d){return validLab(i,d)&&labState(i,d).ready&&d.answer===LAB_QUESTIONS[i-6].answer;}
+export function labHint(i,s){
+ if(s.ready)return LAB_QUESTIONS[i-6].hint;
+ if(i===6){
+  if(s.tool==='permanent')return s.held?'영구 자석은 스위치로 놓을 수 없어요. 되돌리기로 들기 전으로 돌아가 다른 장치를 시험해요.':'스위치로 붙잡고 놓을 수 있는 장치를 골라 비교해요.';
+  if(s.held)return s.right?'바구니 위에서 스위치를 열면 장식을 계속 붙잡을까요?':'장식을 들었어요. 바구니 위로 옮겨요.';
+  return s.right?'장식은 출발점에 있어요. 출발점으로 돌아가요.':s.on?'철 장식 들어 보기를 눌러 자석이 되었는지 확인해요.':'스위치를 닫고 철 장식을 들어 보세요.';
+ }
+ if(i===7)return !s.sameCore?'철심까지 다르면 원인을 구별하기 어려워요. 같은 철심으로 바꿔요.':s.cells===1?'왼쪽은 한 개로 두고 오른쪽 전지 수를 바꿔 비교해요.':!s.compared?'두 쪽 함께 시험을 눌러 같은 장식을 비교해요.':'비교했어요. 무거운 장식 옮기기를 눌러 적용해요.';
+ if(i===8){
+  if(!s.attract)return '먼저 전지의 +가 왼쪽인 상태로 스위치를 닫고 움직임을 시험해요.';
+  if(!s.quiet)return '스위치를 열고 자동차 움직임 시험을 눌러 껐을 때도 관찰해요.';
+  return '전지의 +가 오른쪽이 되게 뒤집고 스위치를 닫아 움직임을 시험해요.';
+ }
+ if(!s.inspected)return '같은 전구로 비교 시험을 눌러 전구 문제인지 먼저 알아봐요.';
+ if(!s.repaired)return '전구는 정상이었어요. 두 전지가 만나는 극을 보고 방향을 바꿔 시험해요.';
+ if(!s.path||s.room)return '사람이 걷는 길과 빈 방을 비교해 필요한 불만 켜요.';
+ if(!s.dry||!s.head||!s.split)return '물기, 플러그 잡는 곳, 한곳에 몰린 플러그를 각각 살펴봐요.';
+ return '축제 점검하기를 눌러 바꾼 상태를 확인해요.';
+}
