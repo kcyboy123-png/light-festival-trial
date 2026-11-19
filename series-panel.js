@@ -1,6 +1,6 @@
-import {bulbArt,cellArt,switchArt} from './circuit-art.js?v=trial-20261120-1';
-import {compareBrightness,correctObservation} from './series-model.js?v=trial-20261120-1';
-import {createProgressHelp} from './progress-help.js?v=trial-20261120-1';
+import {bulbArt,cellArt,switchArt} from './circuit-art.js?v=trial-20261120-2';
+import {compareBrightness,correctObservation} from './series-model.js?v=trial-20261120-2';
+import {createProgressHelp} from './progress-help.js?v=trial-20261120-2';
 export function createSeriesPanel(onChange,onComplete){
  const dialog=document.querySelector('#series-dialog'),$=s=>dialog.querySelector(s);
  let state,selected=null,note='',drag=null,suppress=false,history=[];

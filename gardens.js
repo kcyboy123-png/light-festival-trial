@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {softenOccluder} from './camera-visibility.js?v=trial-20261120-1';
+import {softenOccluder} from './camera-visibility.js?v=trial-20261120-2';
 
 // Shared petal meshes keep dense botanical detail practical in the reflection pass too.
 export function createGardens(scene, {root, mesh, tube, cyl, ring, arch, mat, glow, stone, gold, trim, soil, amber, violet, petalGeometry, random, cameraFocus, cameraFollowing}) {

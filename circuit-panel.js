@@ -1,7 +1,7 @@
-import {bulbArt,batteryArt,switchArt} from './circuit-art.js?v=trial-20261120-1';
-import './circuit.js?v=trial-20261120-1';
-import {evaluateFountain} from './fountain-lamp.js?v=trial-20261120-1';
-import {createProgressHelp} from './progress-help.js?v=trial-20261120-1';
+import {bulbArt,batteryArt,switchArt} from './circuit-art.js?v=trial-20261120-2';
+import './circuit.js?v=trial-20261120-2';
+import {evaluateFountain} from './fountain-lamp.js?v=trial-20261120-2';
+import {createProgressHelp} from './progress-help.js?v=trial-20261120-2';
 export function createCircuitPanel(onChange,onComplete,onFound=()=>{}){
   const C=window.ToyCircuit,dialog=document.querySelector('#circuit-dialog'),$=s=>dialog.querySelector(s),bench=$('#bench');
   $('.battery .part-art').innerHTML=batteryArt('bench-cell');

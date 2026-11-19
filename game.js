@@ -1,11 +1,12 @@
-import {MISSIONS,TEN_SAVE_KEY,freshTenProgress,restoreTenProgress,checkCompletion} from './mission-model.js?v=trial-20261120-1';
-import {BRIEFS} from './mission-guide.js?v=trial-20261120-1';
-import {createMissionPanel} from './mission-panel.js?v=trial-20261120-1';
-import {TIERS,scoreResult,recordWrong} from './score.js?v=trial-20261120-1';
-import {festivalTiming} from './festival-timing.js?v=trial-20261120-1';
+import {MISSIONS,TEN_SAVE_KEY,freshTenProgress,restoreTenProgress,checkCompletion} from './mission-model.js?v=trial-20261120-2';
+import {BRIEFS} from './mission-guide.js?v=trial-20261120-2';
+import {createMissionPanel} from './mission-panel.js?v=trial-20261120-2';
+import {TIERS,scoreResult,recordWrong} from './score.js?v=trial-20261120-2';
+import {festivalTiming} from './festival-timing.js?v=trial-20261120-2';
 
 export function createGame(world,{travel,resume,goView,project,reduceMotion,showReward=()=>{}}){
   const $=s=>document.querySelector(s),sites=world.missionSites;
+  const levels=Array(MISSIONS.length).fill(0),lightProgress=[0,0,0],marker=$('#mission-marker'),markerAnchor=sites[0].position.clone();
   let state=freshTenProgress(),storageOK=true,saveBlocked=false,effect=null,wasNear=null,notice=0;
   try{const raw=localStorage.getItem(TEN_SAVE_KEY);if(raw){const restored=restoreTenProgress(raw);if(restored){state=restored;if(JSON.parse(raw).version<4)try{localStorage.setItem(TEN_SAVE_KEY+'-before-hard-circuits',raw);}catch{saveBlocked=true;storageOK=false;}}else{saveBlocked=true;storageOK=false;}}}catch{storageOK=false;saveBlocked=true;}
   state.score??={from:state.completed,wrong:[]};
@@ -72,7 +73,8 @@ export function createGame(world,{travel,resume,goView,project,reduceMotion,show
   function update(dt){
     if(notice>0){notice-=dt;if(notice<=0)render();}
     if(near()!==wasNear)render();
-    const levels=MISSIONS.map((_,i)=>i<Math.max(state.completed,state.legacyCompleted)?1:0);
+    const completed=Math.max(state.completed,state.legacyCompleted);
+    for(let i=0;i<levels.length;i++)levels[i]=i<completed?1:0;
     let finalProgress=Math.max(state.completed,state.legacyCompleted)===10?1:0,finalRunning=false;
     const origin=effect?.origin||sites[9].position;
     if(effect){
@@ -82,16 +84,17 @@ export function createGame(world,{travel,resume,goView,project,reduceMotion,show
       if(t===1)skipReveal();
     }
     world.setMissionLights(levels,state.completed<10?state.completed:-1);
-    world.awakening.set([(levels[0]+levels[1]+levels[2])/3,(levels[3]+levels[4])/2,(levels[5]+levels[6]+levels[7])/3]);
+    lightProgress[0]=(levels[0]+levels[1]+levels[2])/3;lightProgress[1]=(levels[3]+levels[4])/2;lightProgress[2]=(levels[5]+levels[6]+levels[7])/3;
+    world.awakening.set(lightProgress);
     world.carousel.setLight(levels[9]);
     const phase=festivalTiming(finalProgress),garden=levels[8]*35;
     world.awakening.setFestival(Math.max(garden||-5,phase.radius),origin,finalRunning&&!reduceMotion?phase.fade:0);
     world.festival.set(finalProgress,origin,finalRunning,reduceMotion);
-    const marker=$('#mission-marker');
-    if(state.completed===10||modal()||effect){marker.hidden=true;return;}
-    const anchor=target().position.clone();anchor.y+=1.2;const p=project(anchor);
-    marker.hidden=p.z< -1||p.z>1||p.x<75||p.x>innerWidth-75||p.y<120||p.y>innerHeight-170;
-    if(!marker.hidden){marker.style.left=p.x+'px';marker.style.top=p.y+'px';marker.textContent=(state.completed+1)+'. '+MISSIONS[state.completed].title;}
+    if(state.completed===10||modal()||effect){if(!marker.hidden)marker.hidden=true;return;}
+    markerAnchor.copy(target().position);markerAnchor.y+=1.2;const p=project(markerAnchor);
+    const hidden=p.z< -1||p.z>1||p.x<75||p.x>innerWidth-75||p.y<120||p.y>innerHeight-170;
+    if(marker.hidden!==hidden)marker.hidden=hidden;
+    if(!hidden){const x=Math.round(p.x)+'px',y=Math.round(p.y)+'px',label=(state.completed+1)+'. '+MISSIONS[state.completed].title;if(marker.style.left!==x)marker.style.left=x;if(marker.style.top!==y)marker.style.top=y;if(marker.textContent!==label)marker.textContent=label;}
   }
   document.body.classList.add('playing');
   if(state.completed)resume(sites[state.completed-1].node);

@@ -1,7 +1,7 @@
-import {freshCarousel,validCarousel} from './series-model.js?v=trial-20261120-1';
-import {firstDraft,firstStory,validFirstStory} from './first-lamp.js?v=trial-20261120-1';
-import {bridgeDraft,bridgeStory,validBridgeStory} from './bridge-lamp.js?v=trial-20261120-1';
-import {fountainDraft,fountainStory,validFountainStory} from './fountain-lamp.js?v=trial-20261120-1';
+import {freshCarousel,validCarousel} from './series-model.js?v=trial-20261120-2';
+import {firstDraft,firstStory,validFirstStory} from './first-lamp.js?v=trial-20261120-2';
+import {bridgeDraft,bridgeStory,validBridgeStory} from './bridge-lamp.js?v=trial-20261120-2';
+import {fountainDraft,fountainStory,validFountainStory} from './fountain-lamp.js?v=trial-20261120-2';
 export const SAVE_KEY='changyong-light-festival-circuit-v1';
 export const checkpointIndex=state=>state.carousel.restored?3:state.completed-1;
 export const freshProgress=()=>({version:1,completed:0,firstLamp:firstStory(),bridgeLamp:bridgeStory(),fountainLamp:fountainStory(),carousel:freshCarousel(),drafts:[firstDraft(),bridgeDraft(),fountainDraft()]});

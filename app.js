@@ -5,29 +5,36 @@ import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
-import {createWorld} from './world.js?v=trial-20261120-1';
-import {nearestNode,route,walkStep,canTraverse} from './navigation.js?v=trial-20261120-1';
-import {createExplorationInput} from './exploration-input.js?v=trial-20261120-1';
-import {createGame} from './game.js?v=trial-20261120-1';
-import {safeFollowAngle} from './camera-follow.js?v=trial-20261120-1';
-import {initialQuality} from './quality-policy.js?v=trial-20261120-1';
-import {createArrival} from './arrival.js?v=trial-20261120-1';
+import {createWorld} from './world.js?v=trial-20261120-2';
+import {nearestNode,route,walkStep,canTraverse} from './navigation.js?v=trial-20261120-2';
+import {createExplorationInput} from './exploration-input.js?v=trial-20261120-2';
+import {createGame} from './game.js?v=trial-20261120-2';
+import {safeFollowAngle} from './camera-follow.js?v=trial-20261120-2';
+import {initialQuality,renderPixelRatio} from './quality-policy.js?v=trial-20261120-2';
+import {createArrival} from './arrival.js?v=trial-20261120-2';
 
 const previewMode=new URLSearchParams(location.search).get('preview')==='1';
 const $=s=>document.querySelector(s),canvas=$('#scene'),reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function fail(message){$('#error-message').textContent=message;$('#error').hidden=false;$('#loading').hidden=true;}
 try{
   let savedQuality;try{savedQuality=localStorage.getItem('changyong-light-festival-quality-v1');}catch{}
-  let quality=initialQuality({coarse:matchMedia('(pointer: coarse)').matches,touchPoints:navigator.maxTouchPoints,saved:savedQuality});
+  let quality=initialQuality({coarse:matchMedia('(pointer: coarse)').matches,touchPoints:navigator.maxTouchPoints,mobile:navigator.userAgentData?.mobile||/Android|iPhone|iPad|iPod/i.test(navigator.userAgent),saved:savedQuality});
   const renderer=new T.WebGLRenderer({canvas,antialias:false,alpha:false,powerPreference:'high-performance'});
   renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.85;renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.info.autoReset=false;
   const scene=new T.Scene();scene.matrixAutoUpdate=false;scene.background=new T.Color(0x091326);scene.fog=new T.FogExp2(0x12213b,.0032);
   const camera=new T.PerspectiveCamera(48,innerWidth/innerHeight,.15,400);
   const controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.dampingFactor=.07;controls.enablePan=false;controls.minDistance=3.5;controls.maxDistance=74;controls.minPolarAngle=.5;controls.maxPolarAngle=Math.PI*.48;controls.rotateSpeed=.5;controls.zoomSpeed=.65;
   const pmrem=new T.PMREMGenerator(renderer),environment=new RoomEnvironment();const env=pmrem.fromScene(environment,.04);scene.environment=env.texture;environment.dispose();pmrem.dispose();
-  const target=new T.WebGLRenderTarget(innerWidth,innerHeight,{type:T.HalfFloatType,samples:4});
+  const target=new T.WebGLRenderTarget(innerWidth,innerHeight,{type:T.HalfFloatType,samples:quality==='high'?4:2});
   const composer=new EffectComposer(renderer,target);composer.addPass(new RenderPass(scene,camera));const bloom=new UnrealBloomPass(new T.Vector2(innerWidth,innerHeight),.3,.55,1.1);composer.addPass(bloom);composer.addPass(new OutputPass());
-  function resize(){const dpr=quality==='high'?Math.min(devicePixelRatio,2):Math.min(devicePixelRatio,1.25,Math.sqrt(1200000/(innerWidth*innerHeight)));renderer.shadowMap.autoUpdate=quality==='high';renderer.shadowMap.needsUpdate=true;renderer.setPixelRatio(dpr);renderer.setSize(innerWidth,innerHeight,false);composer.setPixelRatio(dpr);composer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
+  function resize(){
+    const dpr=renderPixelRatio(quality,devicePixelRatio,innerWidth,innerHeight),samples=quality==='high'?4:2;
+    for(const buffer of [composer.renderTarget1,composer.renderTarget2])if(buffer.samples!==samples){buffer.samples=samples;buffer.dispose();}
+    renderer.shadowMap.autoUpdate=quality==='high';renderer.shadowMap.needsUpdate=true;renderer.setPixelRatio(dpr);renderer.setSize(innerWidth,innerHeight,false);
+    composer.setPixelRatio(dpr);composer.setSize(innerWidth,innerHeight);
+    const glowScale=quality==='high'?1:.5;bloom.setSize(innerWidth*dpr*glowScale,innerHeight*dpr*glowScale);
+    camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+  }
   resize();const world=await createWorld(scene,renderer,quality);scene.environmentIntensity=.6;
   const poses={carousel:{p:[-7,8.5,33],t:[-25,4,14]},entrance:{p:[7,7,26],t:[0,5,-8]},bridge:{p:[-7,6,6],t:[-14,3,0]},flower:{p:[10,7,3],t:[0,4.7,-8]}};
   const lampStand=world.nodes[world.stations[0].node];poses.lamp={p:[lampStand.x+7,lampStand.y+4.5,lampStand.z+6.7],t:[lampStand.x+.9,2.4,lampStand.z-.5]};
@@ -149,10 +156,9 @@ try{
     }
     game?.update(gameDt,moving||walking.length>0,{looking:now<lookUntil});world.update(elapsed,dt,stage,reduceMotion);updateGuide(dt);drawFrame(now);
   }
-  function drawFrame(now){if(quality==='light'&&now-lastShadow>=1000/12){renderer.shadowMap.needsUpdate=true;lastShadow=now;}scene.updateMatrixWorld();scene.matrixWorldAutoUpdate=false;renderer.info.reset();const start=performance.now();composer.render();renderTime+=performance.now()-start;frameCount++;}
+  function drawFrame(now){if(quality==='light'&&now-lastShadow>=(world.carousel.lit||world.hero.userData.gait?.speed>0?1000/12:250)){renderer.shadowMap.needsUpdate=true;lastShadow=now;}scene.updateMatrixWorld();scene.matrixWorldAutoUpdate=false;renderer.info.reset();const start=performance.now();composer.render();renderTime+=performance.now()-start;frameCount++;}
   const initial=new URLSearchParams(location.search).get('stage');setStage(previewMode?(initial!==null&&/^[012]$/.test(initial)?+initial:2):0,{instant:true});
   if(!previewMode){document.body.classList.add('playing');$('#mission').hidden=false;$('#restart-game').hidden=false;$('#explore-controls').hidden=false;game=createGame(world,{travel,resume,goView,project,reduceMotion,showReward});}
   window.__festival={ready:false,setStage:(s)=>setStage(s,{instant:true}),goView:(s)=>goView(s,true),getState:()=>({cameraFollowing:world.cameraFollowing.value,cameraFov:camera.fov,rewardCamera:rewardShot?{index:rewardShot.index,progress:rewardShot.progress}:null,arrival:arrival?{elapsed:arrival.elapsed}:null,game:game?.state,carousel:world.carousel.state,festival:world.festival.state,stage,current:world.current,viewpoint,camera:camera.position.toArray(),cameraTarget:controls.target.toArray(),guideVisible:guide.visible,guideRecomputes,guidePoints:guideDots.filter(p=>p.visible).map(p=>p.position.toArray()),quality,hero:world.hero.position.toArray(),heroHeading:world.hero.rotation.y,heroGroundOffset:new T.Box3().setFromObject(world.hero,true).min.y-world.hero.position.y,walking:walking.length,walkDistance,frames:frameCount,averageRenderMs:renderTime/Math.max(1,frameCount),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,gardens:world.gardenStats,character:world.hero.userData.asset,gait:world.hero.userData.gait,hip:world.hero.getObjectByName('mixamorigHips')?.getWorldPosition(new T.Vector3()).toArray(),contextLost,reflection:!!world.water.material.uniforms.mirrorSampler.value}),projectNode:i=>{const p=world.nodes[i].clone().project(camera);return {x:(p.x+1)/2*innerWidth,y:(1-p.y)/2*innerHeight};},stations:world.missionSites.map((s,i)=>({name:String(i+1),node:s.node})),edges:world.edges,walkRadii:world.nodes.map(p=>p.walkRadius),plazas:world.plazas,obstacles:world.obstacles,nodes:world.nodes.map(p=>p.toArray())};
   await world.festival.prepare(renderer,camera);if(!previewMode&&!reduceMotion)arrival=createArrival(scene,renderer,camera,controls,world.hero,()=>{arrival=null;goView('fox',true);updateGuide(0);});else updateGuide(0);composer.render();window.__festival.ready=true;requestAnimationFrame(frame);last=performance.now();$('#loading').classList.add('loaded');setTimeout(()=>$('#loading').hidden=true,850);
 }catch(error){console.error(error);fail('3D 화면을 준비하지 못했어요. 최신 Chrome 또는 Edge에서 로컬 실행 주소를 다시 열어 주세요.');}
-

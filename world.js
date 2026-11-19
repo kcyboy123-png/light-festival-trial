@@ -1,13 +1,13 @@
 import * as T from 'three';
-import {softenOccluder,inFoxCutout} from './camera-visibility.js?v=trial-20261120-1';
+import {softenOccluder,inFoxCutout} from './camera-visibility.js?v=trial-20261120-2';
 import {Water} from 'three/addons/objects/Water.js';
-import {createStarfox} from './character.js?v=trial-20261120-1';
-import {dressCity} from './city-dressing.js?v=trial-20261120-1';
-import {createGardens} from './gardens.js?v=trial-20261120-1';
-import {plantBorders,loadGardenModels} from './planted-borders.js?v=trial-20261120-1';
-import {createAwakening} from './awakening.js?v=trial-20261120-1';
-import {createCarousel,bakeMeshes} from './carousel-world.js?v=trial-20261120-1';
-import {createFestivalReveal} from './festival-reveal.js?v=trial-20261120-1';
+import {createStarfox} from './character.js?v=trial-20261120-2';
+import {dressCity} from './city-dressing.js?v=trial-20261120-2';
+import {createGardens} from './gardens.js?v=trial-20261120-2';
+import {plantBorders,loadGardenModels} from './planted-borders.js?v=trial-20261120-2';
+import {createAwakening} from './awakening.js?v=trial-20261120-2';
+import {createCarousel,bakeMeshes} from './carousel-world.js?v=trial-20261120-2';
+import {createFestivalReveal} from './festival-reveal.js?v=trial-20261120-2';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 const V=(x,y,z)=>new T.Vector3(x,y,z), TAU=Math.PI*2;
@@ -140,7 +140,7 @@ export async function createWorld(scene,renderer,quality='high'){
   const water=new Water(new T.PlaneGeometry(350,350),{textureWidth:1536,textureHeight:1536,waterNormals:normals,sunDirection:moon.position.clone().normalize(),sunColor:0x8199c9,waterColor:0x0a2030,distortionScale:.26,alpha:1,fog:true});water.rotation.x=-Math.PI/2;water.position.y=.03;scene.add(water);water.material.uniforms.size.value=5;
   let lightQuality=quality==='light',lastReflection=-Infinity,reflectionFrames=0;
   const reflectionPosition=new T.Vector3(Infinity,Infinity,Infinity),reflectionRotation=new T.Quaternion(),reflect=water.onBeforeRender;
-  water.onBeforeRender=function(renderer,scene,camera){const now=performance.now(),jumped=reflectionPosition.distanceToSquared(camera.position)>4||Math.abs(reflectionRotation.dot(camera.quaternion))<.98;if(lightQuality&&!jumped&&now-lastReflection<1000/20)return;reflect.call(this,renderer,scene,camera);reflectionFrames++;lastReflection=now;reflectionPosition.copy(camera.position);reflectionRotation.copy(camera.quaternion);};
+  water.onBeforeRender=function(renderer,scene,camera){const now=performance.now(),distance=reflectionPosition.distanceToSquared(camera.position),rotation=Math.abs(reflectionRotation.dot(camera.quaternion)),jumped=distance>4||rotation<.98,movingView=distance>.0025||rotation<.99999;if(lightQuality&&!jumped&&now-lastReflection<(movingView?1000/12:200))return;reflect.call(this,renderer,scene,camera);reflectionFrames++;lastReflection=now;reflectionPosition.copy(camera.position);reflectionRotation.copy(camera.quaternion);};
   const sparksG=new T.BufferGeometry(),sparkPos=[],sparkSeed=[];for(let i=0;i<260;i++){const a=random()*TAU,r=2+random()*26;sparkPos.push(Math.cos(a)*r,1+random()*10,-7+Math.sin(a)*r);sparkSeed.push(random());}sparksG.setAttribute('position',new T.Float32BufferAttribute(sparkPos,3));sparksG.setAttribute('phase',new T.Float32BufferAttribute(sparkSeed,1));
   const sparksM=new T.ShaderMaterial({transparent:true,depthWrite:false,blending:T.AdditiveBlending,uniforms:{time:{value:0},strength:{value:1},pixelRatio:{value:1}},vertexShader:'attribute float phase;uniform float time;uniform float pixelRatio;varying float alpha;void main(){vec3 p=position;p.y+=sin(time*.3+phase*20.)*.4;p.x+=cos(time*.2+phase*9.)*.17;vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp(70./-mv.z,1.,5.)*pixelRatio;alpha=.35+.65*pow(.5+.5*sin(time+phase*40.),3.);}',fragmentShader:'uniform float strength;varying float alpha;void main(){float d=length(gl_PointCoord-.5)*2.;gl_FragColor=vec4(1.8,1.4,.7,pow(max(0.,1.-d),2.)*alpha*strength);}'});scene.add(new T.Points(sparksG,sparksM));
   const hero=character.hero;hero.position.copy(nodes[22]);scene.add(hero);
@@ -191,7 +191,7 @@ export async function createWorld(scene,renderer,quality='high'){
   }
   function snap(state){current=state;update(0,1,state,true);}
   const updateScene=update;function updateWithHero(time,dt,state,reduceMotion){updateScene(time,dt,state,reduceMotion);fountainJets.uniforms.light.value=awakening.enabled?awakening.progress[2]:smooth(1.05,1.95,current);fountainJets.uniforms.time.value=reduceMotion?0:time;jetMesh.visible=fountainJets.uniforms.light.value>0;contact.position.set(hero.position.x,(hero.userData.baseY||1.2)+.025,hero.position.z);character.update(dt,moving,reduceMotion);}
-  function setQuality(v){lightQuality=v==='light';lastReflection=-Infinity;water.getRenderTarget().setSize(lightQuality?960:1536,lightQuality?960:1536);const size=lightQuality?1024:2048;if(moon.shadow.mapSize.x!==size){moon.shadow.map?.dispose();moon.shadow.map=null;moon.shadow.mapSize.set(size,size);renderer.shadowMap.needsUpdate=true;}}
+  function setQuality(v){lightQuality=v==='light';lastReflection=-Infinity;water.getRenderTarget().setSize(lightQuality?512:1536,lightQuality?512:1536);const size=lightQuality?1024:2048;if(moon.shadow.mapSize.x!==size){moon.shadow.map?.dispose();moon.shadow.map=null;moon.shadow.mapSize.set(size,size);renderer.shadowMap.needsUpdate=true;}}
   setQuality(quality);
   return {floorBlocked,cameraFollowing,nodes,edges,plazas,obstacles,onPath,missionSites,setMissionLights,hero,walkMeshes,water,gardenStats,stations,awakening,carousel,festival,carouselStation,update:updateWithHero,snap,setQuality,setMoving(v){moving=v;},get reflectionFrames(){return reflectionFrames;},get current(){return current;}};
 }

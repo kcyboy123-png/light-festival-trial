@@ -87,15 +87,19 @@ export function createCarousel(scene){
   for(let i=0;i<48;i++){const tile=mesh(new T.RingGeometry(7.96,8.15,4,1,i/48*TAU,.065),i%3?teal:rose,[0,1.216,0]);tile.rotation.x=-Math.PI/2;}
   bakeMeshes(fixed);fixed.updateMatrix();fixed.matrixAutoUpdate=false;root.position.set(-25,0,14);root.updateMatrix();root.matrixAutoUpdate=false;scene.add(root);
   const point=new T.PointLight(0xffcc8c,0,25,2);point.position.set(-25,5,14);scene.add(point);
-  let amount=0,angle=0;
+  let amount=0,angle=0,lastAmount=-1,lastOscillating=null;
+  const ease=(a,b)=>T.MathUtils.smoothstep(amount,a,b);
   return {
     setLight(v){amount=T.MathUtils.clamp(v,0,1);},
     update(time,dt,reduced=false){
-      const ease=(a,b)=>T.MathUtils.smoothstep(amount,a,b);
-      deckLight.emissiveIntensity=ease(0,.3)*2.3;roofLight.emissiveIntensity=ease(.1,.65)*2.7;pinkLight.emissiveIntensity=ease(.3,.8)*2;gardenLight.emissiveIntensity=ease(.5,1)*2;for(const petal of petals)petal.emissiveIntensity=ease(.4,1)*.4;point.intensity=ease(.1,.8)*72;
+      if(amount!==lastAmount){deckLight.emissiveIntensity=ease(0,.3)*2.3;roofLight.emissiveIntensity=ease(.1,.65)*2.7;pinkLight.emissiveIntensity=ease(.3,.8)*2;gardenLight.emissiveIntensity=ease(.5,1)*2;for(const petal of petals)petal.emissiveIntensity=ease(.4,1)*.4;point.intensity=ease(.1,.8)*72;lastAmount=amount;}
+      const oscillating=!reduced&&amount>.12;
+      if(!oscillating&&lastOscillating===false)return;
+      lastOscillating=oscillating;
       if(!reduced)angle+=dt*.19*ease(.12,.8);rotor.rotation.y=angle;
       horses.forEach((h,i)=>{h.position.y=1.95+(reduced?0:Math.sin(time*1.6+i*Math.PI/2)*.17*ease(.12,.8));h.updateMatrix();h.matrix.toArray(horseMatrices.array,i*16);});horseMatrices.needsUpdate=true;
     },
+    get lit(){return amount>0;},
     get state(){return {light:amount,angle,horses:horses.length,horseHeights:horses.map(h=>h.position.y)};}
   };
 }

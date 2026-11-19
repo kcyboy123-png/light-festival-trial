@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {festivalTiming,FESTIVAL_SECONDS} from './festival-timing.js?v=trial-20261120-1';
+import {festivalTiming,FESTIVAL_SECONDS} from './festival-timing.js?v=trial-20261120-2';
 
 // One fixed particle buffer and two ground meshes; no per-frame particle allocation or extra shadow maps.
 export function createFestivalReveal(scene){

@@ -1,6 +1,6 @@
 import * as T from 'three';
-import {loadModel} from './load-model.js?v=trial-20261120-1';
-import {barkTex,foliageDetailTex,surfaceData} from './garden-textures.js?v=trial-20261120-1';
+import {loadModel} from './load-model.js?v=trial-20261120-2';
+import {barkTex,foliageDetailTex,surfaceData} from './garden-textures.js?v=trial-20261120-2';
 
 const kinds=['cherry','hydrangea','liriope'];
 export function loadGardenModels(){return Promise.all(kinds.map(kind=>loadModel(`./assets/garden/${kind}.glb`)));}
