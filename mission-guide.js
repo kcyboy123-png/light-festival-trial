@@ -1,4 +1,4 @@
-import {simulate,checkMission,terminals} from './mission-model.js?v=trial-20261119-10';
+import {simulate,checkMission,terminals} from './mission-model.js?v=trial-20261119-11';
 
 // Situation first; hints reveal the idea before naming a possible repair.
 export const BRIEFS=[
@@ -8,10 +8,10 @@ export const BRIEFS=[
   {situation:'정원의 연결 부품이 빠졌어요. 어떤 재료로 채울까요?',goal:'전기가 통하는 재료를 골라, 재료를 지나는 전구의 불을 켜 주세요.',try:'재료를 고르고 비어 있는 연결점을 이어요.',probe:'재료 바꿔 비교하기',reward:'전기가 통하는 재료로 정원이 살아났어요!',hints:['전선만 이어도 재료가 전기를 막으면 불이 켜지지 않아요.','배선은 그대로 두고 재료만 바꾸어 비교해요.','구리를 고르고 재료 2 → 전구 1, 전구 2 → 전지 −를 이어요.']},
   {situation:'새 재료를 끼운 뒤 정원이 꺼졌어요. 어디가 문제일까요?',goal:'전기가 통하는 재료와 끊김 없는 길로 불을 켜 주세요.',try:'재료만 바꾸어도 켜지는지, 끊긴 곳은 없는지 살펴봐요.',probe:'재료만 바꿔 시험',reward:'두 고장을 찾아 별빛 정원이 깨어났어요!',hints:['한 조건씩 바꾸고 불빛을 살펴봐요.','구리로 바꾸어도 꺼져 있다면 전선도 확인해요.','재료 오른쪽 점에서 전구로 이어지는 선이 있는지 살펴봐요.']},
   {situation:'분수 앞 불빛이 약해 물길이 잘 보이지 않아요.',goal:'같은 전구를 전지 한 개일 때보다 밝게 켜 주세요.',try:'우선 전지 한 개로 켜고, 두 개일 때와 비교해요.',probe:'전지 한 개와 비교',reward:'더 밝은 불빛이 분수의 물길을 비춰요!',hints:['먼저 끊긴 곳을 이어 전지 한 개로 불을 켜요.','전지를 하나 더 놓아 보세요. 꺼진다면 두 전지가 만나는 극을 살펴봐요.','스위치 2 → 전구 1을 잇고, 전지 두 개 사이에 ＋와 −가 만나게 뒤집어요.']},
-  {situation:'분수 장식을 들어 바구니에 놓아 주세요.',reward:'전자석으로 옮긴 장식에 꽃빛이 피어났어요!'},
-  {situation:'더 무거운 장식을 들려면 어떤 조건을 바꿀까요?',reward:'공정하게 비교해 분수 정원을 완성했어요!'},
-  {situation:'끌려오는 자석 자동차를 반대쪽으로 보내 주세요.',reward:'극의 변화를 알아내 회전목마 꽃길이 열렸어요!'},
-  {situation:'필요한 곳을 밝히고 축제의 낭비와 위험을 찾아요.',reward:'밝고 안전한 빛의 축제가 완성됐어요!'}
+  {situation:'분수 불이 꺼졌어요. 전지 방향만 고쳐도 수리는 끝나지 않아요.',goal:'밝게 켜지고, 스위치를 열면 꺼지게 고쳐요.',try:'전지 방향과 스위치를 지나는 길을 따로 시험해요.',probe:'밝기와 스위치 시험',reward:'두 고장을 고쳐 꽃잎 분수가 깨어났어요!',hints:['한 곳을 고친 뒤 모든 조건이 맞는지 시험해요.','불이 켜져도 스위치를 열었을 때 꺼지는지 확인해요.','스위치 양쪽을 직접 잇는 선은 스위치를 건너뛰어요.']},
+  {situation:'정원 문 두 곳이 모두 닫혀야 분수 등이 켜져야 해요.',goal:'A와 B가 모두 닫혔을 때만 켜지게 만들어요.',try:'큰 원끼리 이어 회로를 만들고 네 가지 상태를 시험해요.',probe:'A·B 네 가지 상태 시험',reward:'두 조건을 함께 확인하는 정원 등이 켜졌어요!',hints:['A만 열었을 때도, B만 열었을 때도 꺼져야 해요.','한 스위치를 건너뛰는 길이 있으면 그 스위치가 불을 끌 수 없어요.','전지에서 전구까지 이어지는 길이 A와 B를 모두 지나게 생각해요.']},
+  {situation:'꽃길 양쪽 어디에서든 스위치 하나로 불을 켜야 해요.',goal:'A만 닫아도, B만 닫아도 켜지게 고쳐요.',try:'지금 배선은 둘 다 닫아야 켜져요. 다른 길을 설계해요.',probe:'A·B 네 가지 상태 시험',reward:'어느 쪽에서도 꽃길을 밝힐 수 있어요!',hints:['8단계와 달리 한쪽만 닫아도 불이 켜져야 해요.','A를 연 채 B만 닫아 전구까지 이어지는 길을 찾아요.','A를 지나는 길과 B를 지나는 길이 따로 필요해요.']},
+  {situation:'회전목마의 안전등에 여러 고장이 겹쳐 있어요.',goal:'두 전지로 밝게, 구리를 지나고, A·B 모두 닫힐 때만 켜요.',try:'전지·재료·스위치 조건을 하나씩 바꿔 고장을 구별해요.',probe:'안전 스위치 네 상태 시험',reward:'모든 조건을 확인해 빛의 축제를 완성했어요!',hints:['불이 켜지는 것만으로는 안전 회로가 완성되지 않아요.','A만 열었을 때와 B만 열었을 때 모두 꺼지는지 비교해요.','전지 방향·재료를 고친 뒤, 두 스위치를 건너뛰는 선도 살펴봐요.']}
 ];
 
 export function nextHint(i,level){
@@ -32,6 +32,7 @@ export function diagnosis(i,m,d){
     return '전구 '+names+'가 꺼져 있어요. 두 연결점에서 전지까지 이어지는 길이 모두 있는지 살펴봐요.';
   }
   if(m.kind==='cells'&&d.cells===1)return '전지 한 개로 켜졌어요. 이제 하나 더 놓아 밝기가 어떻게 달라지는지 봐요.';
+  if(m.kind==='both'||m.kind==='either')return '불은 켜졌지만 작동 조건이 달라요. 네 가지 상태 시험에서 목표와 다른 경우를 찾아요.';
   if(m.kind==='series')return '불은 켜졌어요. ‘전구 A 빼서 시험’을 눌러 B도 꺼지는지 보세요. 계속 켜지면 전기가 갈 수 있는 다른 길이 있어요.';
   if(m.kind==='parallel'||m.kind==='final')return '불은 켜졌어요. 전구를 하나씩 빼서 시험해요. 남은 전구의 밝기가 달라지면 갈래 사이의 전선을 살펴봐요.';
   if(m.kind==='independent')return '두 불은 켜졌지만 따로 움직이지 않아요. A만 켰을 때와 B만 켰을 때를 비교해요.';
@@ -41,6 +42,8 @@ export function diagnosis(i,m,d){
 // Previews never mutate or save the child's wiring; each step is explicitly closed.
 export function experiments(i,m,d){
   const base=simulate(m,d),item=(label,result)=>({label,result});
+  if(m.kind==='both'||m.kind==='either')return [[true,true],[true,false],[false,true],[false,false]].map(switches=>({...item('A '+(switches[0]?'닫힘':'열림')+' · B '+(switches[1]?'닫힘':'열림'),simulate(m,d,{switches})),switches}));
+  if(i===6)return [{...item('전지 한 개 · 스위치 닫힘',simulate(m,{...d,cells:1})),cells:1},{...item('두 개 · 스위치 닫힘',base),cells:2},{...item('두 개 · 스위치 열림',simulate(m,d,{switches:[false]})),switches:[false],cells:2}];
   if(m.kind==='cells')return [{...item('같은 회로 · 전지 한 개',simulate(m,{...d,cells:1})),cells:1},{...item('지금 회로 · 전지 '+(d.cells===1?'한':'두')+' 개',base),cells:d.cells}];
   if(m.material)return ['plastic','rubber','copper'].map(material=>({...item(({plastic:'플라스틱',rubber:'고무',copper:'구리'})[material]+'로 비교',simulate(m,{...d,material})),material}));
   if(m.kind==='independent')return [true,false].map(a=>({...item('스위치 '+(a?'A':'B')+'만 켬',simulate(m,d,{switches:[a,!a]})),switches:[a,!a]}));
@@ -68,8 +71,8 @@ export const OBJECTIVES=[
  {stage:'재료 탐구',targets:['재료를 지나는 길 → 불 켜짐']},
  {stage:'원인 구별',targets:['원인 찾기 → 고친 뒤 불 켜기']},
  {stage:'밝기 비교',targets:['전지 1개보다 2개일 때 더 밝게']},
- {stage:'전자석의 작동',targets:['철 장식을 들어 바구니에 놓기']},
- {stage:'공정한 비교',targets:['전지 수만 바꿔 세기 비교']},
- {stage:'극의 변화',targets:['전지 방향을 바꿔 자동차 보내기']},
- {stage:'안전한 축제',targets:['필요한 곳은 밝게, 낭비와 위험은 적게']}
+ {stage:'회로 도전 · 복합 고장',targets:['두 전지로 밝게 · 스위치를 열면 꺼짐']},
+ {stage:'회로 도전 · 배운 원리 응용',targets:['A·B 모두 닫힘 → 켜짐','하나라도 열림 → 꺼짐']},
+ {stage:'회로 도전 · 다른 길 설계',targets:['하나만 닫혀도 → 켜짐','둘 다 열림 → 꺼짐']},
+ {stage:'회로 도전 · 종합 진단',targets:['전지 2개로 밝게 · 구리를 지나는 길','A·B 모두 닫힘 → 켜짐 / 하나라도 열림 → 꺼짐']}
 ];

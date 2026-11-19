@@ -1,12 +1,12 @@
-import {MISSIONS,TEN_SAVE_KEY,freshTenProgress,restoreTenProgress,checkCompletion} from './mission-model.js?v=trial-20261119-10';
-import {BRIEFS} from './mission-guide.js?v=trial-20261119-10';
-import {createMissionPanel} from './mission-panel.js?v=trial-20261119-10';
+import {MISSIONS,TEN_SAVE_KEY,freshTenProgress,restoreTenProgress,checkCompletion} from './mission-model.js?v=trial-20261119-11';
+import {BRIEFS} from './mission-guide.js?v=trial-20261119-11';
+import {createMissionPanel} from './mission-panel.js?v=trial-20261119-11';
 import {festivalTiming} from './festival-timing.js';
 
 export function createGame(world,{travel,resume,goView,project,reduceMotion}){
   const $=s=>document.querySelector(s),sites=world.missionSites;
   let state=freshTenProgress(),storageOK=true,saveBlocked=false,effect=null,wasNear=null,notice=0;
-  try{const raw=localStorage.getItem(TEN_SAVE_KEY);if(raw){const restored=restoreTenProgress(raw);if(restored){state=restored;if(JSON.parse(raw).version===2)try{localStorage.setItem(TEN_SAVE_KEY+'-before-curriculum',raw);}catch{saveBlocked=true;storageOK=false;}}else{saveBlocked=true;storageOK=false;}}}catch{storageOK=false;saveBlocked=true;}
+  try{const raw=localStorage.getItem(TEN_SAVE_KEY);if(raw){const restored=restoreTenProgress(raw);if(restored){state=restored;if(JSON.parse(raw).version<4)try{localStorage.setItem(TEN_SAVE_KEY+'-before-hard-circuits',raw);}catch{saveBlocked=true;storageOK=false;}}else{saveBlocked=true;storageOK=false;}}}catch{storageOK=false;saveBlocked=true;}
   function save(){if(!saveBlocked)try{localStorage.setItem(TEN_SAVE_KEY,JSON.stringify(state));storageOK=true;}catch{storageOK=false;}$('#save-note').hidden=storageOK;}
   const modal=()=>!!document.querySelector('dialog[open]');
   const target=()=>sites[Math.min(state.completed,9)];
@@ -16,7 +16,7 @@ export function createGame(world,{travel,resume,goView,project,reduceMotion}){
     $('#progress').textContent=state.completed+' / 10';$('#progress').setAttribute('aria-label','밝힌 장소 '+state.completed+'개 / 10개');
     $('#mission-name').textContent=done?'빛의 도시 완성!':(state.completed+1)+'. '+MISSIONS[state.completed].title;
     $('#mission-line').textContent=done?'열 곳에 빛을 되찾았어요. 완성한 도시를 자유롭게 걸어 보세요.':near()?BRIEFS[state.completed].situation:'빛길을 따라 '+MISSIONS[state.completed].title+'의 불을 고치러 가요.';
-    $('#mission-action').textContent=done?'여우 따라 보기':near()?(state.completed>=6?'탐구 시작 · E':'회로 고치기 · E'):'빛길 따라 걷기 · E';
+    $('#mission-action').textContent=done?'여우 따라 보기':near()?(state.completed>=6?'회로도 풀기 · E':'회로 고치기 · E'):'빛길 따라 걷기 · E';
     $('#chapter').textContent=state.legacyCompleted>state.completed?'이전 불빛은 보존했어요 · 새 탐구 이어 하기':done?'내가 깨운 빛의 도시':'별여우와 함께 빛을 되찾아요';
     $('#save-note').hidden=storageOK;
     $('#save-note').textContent=saveBlocked?'이전 기록을 보호하려고 새 저장을 멈췄어요. 이 화면에서는 계속할 수 있어요.':'기록을 저장하지 못했어요. 이 화면에서는 계속할 수 있어요.';

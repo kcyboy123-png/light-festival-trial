@@ -1,7 +1,8 @@
-import {labScene} from './lab-art.js?v=trial-20261119-10';
-import {LABS,CIRCUIT_QUESTIONS,LAB_QUESTIONS,circuitKey,labState,labPassed,labHint} from './inquiry-model.js?v=trial-20261119-10';
-import {MISSIONS,simulate,freshDraft} from './mission-model.js?v=trial-20261119-10';
-import {bulbArt,compactCell} from './circuit-art.js?v=trial-20261119-10';
+import {studioBulb,diagramBulb,diagramSwitch} from './diagram-art.js?v=trial-20261119-11';
+import {labScene} from './lab-art.js?v=trial-20261119-11';
+import {LABS,CIRCUIT_QUESTIONS,LAB_QUESTIONS,circuitKey,labState,labPassed,labHint} from './inquiry-model.js?v=trial-20261119-11';
+import {MISSIONS,simulate,freshDraft} from './mission-model.js?v=trial-20261119-11';
+import {bulbArt,compactCell} from './circuit-art.js?v=trial-20261119-11';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
@@ -21,7 +22,9 @@ export function createLearningPanel({onChange,onComplete,onClose}){
   if(index===3)rows=['copper','plastic','rubber'].map(material=>[({copper:'구리',plastic:'플라스틱',rubber:'고무'})[material],simulate(m,{...draft,material})]);
   if(index===4){const before=freshDraft(m);rows=[['① 처음: 플라스틱',simulate(m,before)],['② 구리만 바꿈',simulate(m,{...before,material:'copper'})],['③ 구리 + 선 수리',simulate(m,draft)]];}
   if(index===5)rows=[['전지 한 개',simulate(m,{...draft,cells:1})],['전지 두 개 · 직렬',simulate(m,draft)]];
-  return `<div class="result-grid">${rows.map(([label,r],i)=>`<div class="result-card ${r.brightness[0]>.001?'lit':''}" data-level="${r.brightness[0]>.75?'bright':r.brightness[0]>.001?'dim':'off'}" style="--lamp-light:${r.brightness[0]}"><strong>${label}</strong><svg class="work-bulb" viewBox="0 0 260 220" aria-hidden="true">${bulbArt('compare-'+index+'-'+i)}</svg>${index===5?`<svg class="compare-cells" viewBox="0 0 160 36" aria-label="전지 ${i+1}개">${battery(i?12:46,3,i+1)}${i?'<path d="M74 18H82" stroke="#a7d9c8" stroke-width="3"/>':''}</svg>`:''}<span>${r.brightness[0]>.001?'켜짐':'꺼짐'}${index===5?' · '+(i?'비교 대상':'비교 기준'):''}</span></div>`).join('')}</div><p class="learning-note">${index===5?'같은 3.0 V 전구·같은 배선, 전지는 각각 1.5 V예요. 서로 독립된 두 회로를 비교해요.':index===4?'처음 회로를 재현한 시험 기록이에요. 수리한 회로는 그대로 보존돼요.':'배선은 그대로 두고 한 가지 조건만 바꿔 비교했어요.'}</p>`;
+  if(index===6)rows=[['처음 배선 · 방향만 수리 · 열림',simulate(m,{...freshDraft(m),flipped:false},{switches:[false]})],['전지 한 개 · 닫힘',simulate(m,{...draft,cells:1})],['전지 두 개 · 닫힘',simulate(m,draft)],['전지 두 개 · 열림',simulate(m,draft,{switches:[false]})]];
+  if(index>=7)rows=[[true,true],[true,false],[false,true],[false,false]].map(switches=>['A '+(switches[0]?'닫힘':'열림')+' · B '+(switches[1]?'닫힘':'열림'),simulate(m,draft,{switches})]);
+  return `<div class="result-grid ${index>=6?'logic-results':''}">${rows.map(([label,r],i)=>`<div class="result-card ${r.brightness[0]>.001?'lit':''}" data-level="${r.brightness[0]>.75?'bright':r.brightness[0]>.001?'dim':'off'}" style="--lamp-light:${r.brightness[0]?Math.min(1,.18+Math.sqrt(r.brightness[0])*.82):0}"><strong>${label}</strong><svg class="work-bulb" viewBox="0 0 260 220" aria-hidden="true">${studioBulb('compare-'+index+'-'+i)}</svg>${index===5?`<svg class="compare-cells" viewBox="0 0 160 36" aria-label="전지 ${i+1}개">${battery(i?12:46,3,i+1)}${i?'<path d="M74 18H82" stroke="#a7d9c8" stroke-width="3"/>':''}</svg>`:''}<span>${r.brightness[0]>.75?'밝게 켜짐':r.brightness[0]>.001?'켜짐':'꺼짐'}${index===5?' · '+(i?'비교 대상':'비교 기준'):''}</span></div>`).join('')}</div><p class="learning-note">${index===5?'같은 3.0 V 전구·같은 배선, 전지는 각각 1.5 V예요. 서로 독립된 두 회로를 비교해요.':index===4?'처음 회로를 재현한 시험 기록이에요. 수리한 회로는 그대로 보존돼요.':index===6?'첫 칸은 고장 난 처음 배선의 시험이에요. 나머지는 고친 회로예요.':index>=7?'수리한 배선은 그대로 두고 A·B의 네 가지 상태를 모두 시험한 결과예요.':'배선은 그대로 두고 한 가지 조건만 바꿔 비교했어요.'}</p>`;
  }
  function render(){
   const active=dialog.querySelector(':focus'),focus=active?.dataset,activeId=active?.id,lab=mode==='lab',s=lab?labState(index,draft):null,ready=lab?s.ready:phase==='observe';
@@ -39,7 +42,7 @@ export function createLearningPanel({onChange,onComplete,onClose}){
    content+=`<p class="lab-status" role="status">${esc(s.message)}</p>`;
    if(ready)content+=choiceUI();
   }
-  dialog.innerHTML=`<header><div><small>${index+1} / 10 · ${lab?'도시 탐구':'관찰로 확인'}</small><h2 id="learning-title">${esc(MISSIONS[index].title)}</h2></div><button id="learning-close" aria-label="탐구 닫기">×</button></header>${lab?'<p id="learning-goal">'+esc(LABS[index-6].task)+'</p>':''}${content}<p id="learning-feedback" role="status" aria-live="polite">${esc(feedback)}</p><footer>${lab?'<button id="lab-undo" '+(!draft.actions.length?'disabled':'')+'>되돌리기</button><button id="lab-reset">다시 해 보기</button>':''}<button id="learning-hint">관찰 도움</button><button id="learning-submit" ${(!lab&&phase==='predict'?prediction===null:!ready||selected===null)?'disabled':''}>${!lab&&phase==='predict'?'예상하고 실험하기':lab?'확인하고 빛 보내기':'관찰 결과 확인'}</button></footer><p class="learning-note">${lab?'모의 실험이에요. 실제 전기 기구를 분해하거나 콘센트에서 실험하지 않아요.':''}${index===7?' 장식 무게와 들리는 모습은 원리를 보여 주는 모의 결과예요.':''}</p>`;
+  dialog.innerHTML=`<header><div><small>${index+1} / 10 · ${lab?'도시 탐구':'관찰로 확인'}</small><h2 id="learning-title">${esc(MISSIONS[index].title)}</h2></div><button id="learning-close" aria-label="탐구 닫기">×</button></header>${lab?'<p id="learning-goal">'+esc(LABS[index-6].task)+'</p>':''}${content}<p id="learning-feedback" role="status" aria-live="polite">${esc(feedback)}</p><footer>${lab?'<button id="lab-undo" '+(!draft.actions.length?'disabled':'')+'>되돌리기</button><button id="lab-reset">다시 해 보기</button>':''}<button id="learning-hint">관찰 도움</button><button id="learning-submit" ${(!lab&&phase==='predict'?prediction===null:!ready||selected===null)?'disabled':''}>${!lab&&phase==='predict'?'예상하고 실험하기':lab?'확인하고 빛 보내기':'관찰 결과 확인'}</button></footer><p class="learning-note">${lab?'모의 실험이에요. 실제 전기 기구를 분해하거나 콘센트에서 실험하지 않아요.':''}${lab&&index===7?' 장식 무게와 들리는 모습은 원리를 보여 주는 모의 결과예요.':''}</p>`;
   dialog.querySelector('#learning-close').onclick=close;
   for(const b of dialog.querySelectorAll('[data-predict]'))b.onclick=()=>{prediction=+b.dataset.predict;render();};
   for(const b of dialog.querySelectorAll('[data-choice]'))b.onclick=()=>{selected=b.dataset.choice;feedback='선택했어요. 아래 확인 버튼을 눌러요.';render();};
@@ -56,7 +59,7 @@ export function createLearningPanel({onChange,onComplete,onClose}){
    if(!lab&&phase==='predict'){if(prediction===null)return;phase='observe';if(mainQuestion.outcome){question=mainQuestion.outcome;choices=shuffle(question.choices);}feedback='예상과 달라도 괜찮아요. 실제 결과를 보고 판단해요.';render();dialog.scrollTop=0;return;}
    if(!ready||selected===null)return;
    if(selected!==question.answer){feedback='관찰 결과와 아직 맞지 않아요. '+question.hint;render();return;}
-   if(!lab&&mainQuestion.outcome&&outcome===null){outcome=selected;selected=null;question=mainQuestion;choices=shuffle(question.choices);feedback='밝기를 확인했어요. 이제 비교 방법을 생각해요.';render();const q=dialog.querySelector('#learning-question');q.focus({preventScroll:true});q.scrollIntoView({block:'center'});return;}
+   if(!lab&&mainQuestion.outcome&&outcome===null){outcome=selected;selected=null;question=mainQuestion;choices=shuffle(question.choices);feedback='결과를 확인했어요. 이제 조건을 바꾸면 어떻게 될지 생각해요.';render();const q=dialog.querySelector('#learning-question');q.focus({preventScroll:true});q.scrollIntoView({block:'center'});return;}
    if(lab){draft.answer=selected;if(!labPassed(index,draft))return;onChange(index,structuredClone(draft));dialog.close();onComplete(index,structuredClone(draft));}
    else{const e={key:circuitKey(draft),prediction,observed:true,answer:selected,...(outcome?{outcome}:{})};dialog.close();finish(e);}
   };

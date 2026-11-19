@@ -77,3 +77,91 @@
 @media(min-width:900px){.experiment-workspace{grid-template-columns:minmax(0,1fr) 218px;gap:18px}.experiment-workspace .lab-stage svg{max-height:none}.lab-controls{grid-template-columns:1fr}.lab-controls button{min-height:45px;font-size:13px;padding:9px 10px}.learning-dialog .learning-choices{gap:7px}.learning-dialog .learning-choices button{padding:10px 14px}}
 @media(max-width:600px){.learning-dialog h2{font-size:22px}#learning-goal{font-size:15px;margin:8px 0 12px}.lab-controls{gap:6px}.lab-controls button{gap:6px;padding:8px;font-size:12px}.lab-controls button svg{flex-basis:18px;width:18px;height:18px}.lab-stage svg{max-height:none}.result-card strong{font-size:12px}.result-card .work-bulb{height:116px}.learning-dialog .learning-choices button{font-size:14px;padding:10px}.learning-dialog footer button{font-size:12px;padding:8px}#work-board .work-cells{height:74px}#work-board .work-bulb{height:112px}}
 @media(max-height:500px){.learning-dialog h2{font-size:18px}.learning-dialog #learning-goal{font-size:14px}.experiment-workspace{grid-template-columns:minmax(0,1fr) 210px;gap:12px}.lab-controls{grid-template-columns:1fr}.lab-controls button{font-size:12px}.lab-stage svg{max-height:240px}}
+
+/* Studio pass: quiet porcelain surface, photographic props, copper/teal terminals. */
+#work-board{background:#e7efeb;border:1px solid #dce9e2;border-radius:20px;padding-top:24px;box-shadow:inset 0 1px 0 #fff}
+#work-board .work-part{background:#e7efeb;border:0;box-shadow:none;border-radius:12px;color:#1b4149}
+#work-board .work-part h3{color:#1b4149;font-size:15px;letter-spacing:-.3px}
+#work-board .work-bulb{height:154px;max-width:190px}
+#work-board .lamp-status{color:#34545a;background:#f8faf1;padding:4px 12px 7px;border-radius:20px}
+#work-board .work-switch{color:#31595b;background:#d4e1da;border:1px solid #b0c8bd}
+#work-board .work-switch svg{height:58px}
+#work-board .cell-junction{color:#345e56}#work-board .cell-junction.opposed{color:#924b37}
+.wire-bed{stroke:#e7efeb;stroke-width:11}.wire-thread{stroke-width:4.5}.wire-selected .wire-thread{stroke:#ad762b;stroke-width:7}
+.connect-point{background:#eef5ee;color:#24535a;border:2px solid #719794;box-shadow:0 2px 3px #183e4820}
+.connect-point.positive{background:#a75d43;border-color:#e9b59e;color:#fff9f0}.connect-point.negative{background:#326379;border-color:#b4d6dd;color:#f5ffff}
+.connect-point.wired{box-shadow:0 0 0 3px #8aaea638}.connect-point.selected{background:#f1d398;color:#233c43;outline-color:#ae7936}
+#work-board[data-switches="2"] #work-parts{grid-template-columns:repeat(3,minmax(0,1fr));gap:52px 60px}
+#work-board[data-switches="2"] .power-part{grid-column:1;grid-row:1;max-width:none;width:auto}
+#work-board[data-switches="2"] .lamp-0{grid-column:3;grid-row:1;max-width:none;width:auto}
+#work-board[data-switches="2"] .switch-0{grid-column:1;grid-row:2}
+#work-board[data-switches="2"] .switch-1{grid-column:3;grid-row:2}
+#work-board[data-switches="2"] .material-part{grid-column:2;grid-row:1}
+@media(max-width:699px){#work-board[data-switches="2"] #work-parts{grid-template-columns:repeat(2,minmax(0,1fr));gap:48px 48px}#work-board[data-switches="2"] .lamp-0{grid-column:2}#work-board[data-switches="2"] .switch-1{grid-column:2}#work-board[data-switches="2"] .material-part{grid-column:1 / -1;grid-row:3;max-width:220px;justify-self:center;width:100%}#work-board .work-bulb{height:130px}}
+
+/* Diagram pass: keep all five parts visible together on a landscape tablet. */
+.work-bulb{filter:none!important}
+#work-board[data-challenge="true"]{background:#f2f4ed;background-image:radial-gradient(#a9bdbb66 .7px,transparent .7px);background-size:20px 20px;padding:14px 32px 40px}
+#work-board[data-challenge="true"] .work-part{background:#f2f4ed;padding-top:0}
+#work-board[data-challenge="true"] .work-part h3{font-size:14px;margin:0 0 5px;border:0;box-shadow:none}
+#work-board[data-challenge="true"] #work-parts{row-gap:44px}
+#work-board[data-challenge="true"] .work-bulb{height:68px;max-width:120px}
+.diagram-bulb,.diagram-switch{stroke:#284a51;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.diagram-bulb .diagram-halo{fill:#f5cd73;stroke:none;opacity:var(--lamp-light,0)}
+.diagram-bulb circle:not(.diagram-halo){fill:#f2f4ed}.lit .diagram-bulb circle:not(.diagram-halo){fill:#ffe5a1}
+.diagram-switch{stroke-width:3.5}.diagram-switch circle{fill:#f2f4ed}
+#work-board[data-challenge="true"] .work-switch{border:0;background:transparent;min-height:68px;padding:0}
+#work-board[data-challenge="true"] .work-switch svg{height:42px}
+#work-board[data-challenge="true"] .work-switch span{font-size:12px}
+#work-board[data-challenge="true"] .work-cells{height:44px}
+#work-board[data-challenge="true"] .cell-actions{padding:3px 0 0}
+#work-board[data-challenge="true"] .cell-junction{margin:3px 0;font-size:11px}
+#work-board[data-challenge="true"] .cell-actions button{min-height:44px;font-size:12px;padding:3px 4px;background:#e3e9de;color:#31544f;border-color:#9eb7ac}
+#work-board[data-challenge="true"] .lamp-status{padding:1px 6px 5px;margin:0 auto 3px;font-size:11px;background:transparent}
+#work-board[data-challenge="true"] .connect-point{width:48px;height:48px;min-height:48px;font-size:18px}
+#work-board[data-challenge="true"] .material-options{min-height:52px;gap:3px;padding:0;flex-wrap:wrap}
+#work-board[data-challenge="true"] .material-options button{min-height:44px;font-size:12px;padding:0 6px}
+#work-dialog[data-challenge="true"] #work-targets{font-size:15px;margin:5px 0;gap:2px 12px}
+#work-dialog[data-challenge="true"] #work-situation{font-size:13px}
+#work-dialog[data-challenge="true"] .help-row{margin:0}
+#work-dialog[data-challenge="true"] .message-bar{margin:3px 0}
+#work-dialog[data-challenge="true"] #work-message{font-size:13px;padding:5px 9px}
+@media(min-width:700px){#work-board[data-challenge="true"][data-switches="2"] .power-part,#work-board[data-challenge="true"][data-switches="2"] .material-part,#work-board[data-challenge="true"][data-switches="2"] .lamp-part{align-self:center}}
+@media(max-width:699px){#work-board[data-challenge="true"]{padding-left:22px;padding-right:22px}#work-dialog[data-challenge="true"] #work-targets{font-size:14px}}
+/* These layouts override the legacy one-switch board explicitly. */
+#work-board[data-bulbs="1"][data-switches="2"][data-challenge="true"] .power-part{grid-column:1;grid-row:1}
+#work-board[data-bulbs="1"][data-switches="2"][data-challenge="true"] .lamp-0{grid-column:3;grid-row:1}
+#work-board[data-bulbs="1"][data-switches="2"][data-challenge="true"] .switch-0{grid-column:1;grid-row:2}
+#work-board[data-bulbs="1"][data-switches="2"][data-challenge="true"] .switch-1{grid-column:3;grid-row:2}
+#work-board[data-bulbs="1"][data-switches="2"][data-challenge="true"] .material-part{grid-column:2;grid-row:1}
+@media(max-width:699px){#work-board[data-bulbs="1"][data-switches="2"][data-challenge="true"] .lamp-0,#work-board[data-bulbs="1"][data-switches="2"][data-challenge="true"] .switch-1{grid-column:2}#work-board[data-bulbs="1"][data-switches="2"][data-challenge="true"] .material-part{grid-column:1 / -1;grid-row:3}}
+
+/* Comparison pass: distinguish observed states without relying on glow alone. */
+.result-card{background:#e7efeb;border:1px solid #ccd8d0;box-shadow:none}
+.result-card[data-level=bright]{background:#f6edcd;border-color:#d7bc72}.result-card[data-level=dim]{background:#e9eddc}
+.result-card>span{display:inline-block;background:#c5d3cf;color:#31514f;border-radius:20px;min-width:80px;padding:5px 10px;font-weight:700}
+.result-card.lit>span{background:#edcc7c;color:#513d1b}
+.logic-results .result-card{padding:15px 8px 12px;border-radius:14px}
+.logic-results .result-card strong{font-size:14px;line-height:1.5;min-height:42px;display:grid;place-content:center}
+.logic-results .work-bulb{height:120px;max-width:145px}
+.logic-results .result-card>span{font-size:12px;min-width:60px;padding:4px 9px}
+.result-card .bulb-warmth{opacity:var(--lamp-light,0)}
+#work-board .connect-point{border:2px solid #7e9c97;background:#f6f8f1;color:#224a51;box-shadow:0 2px 2px #244c5020;font-weight:700}
+#work-board .connect-point.positive{background:#ab664c;border-color:#884a36;color:#fff8e9}
+#work-board .connect-point.negative{background:#3b6c82;border-color:#2c5468;color:#f5ffff}
+#work-board .connect-point.selected{background:#f4dc9a;outline:3px solid #b38739;color:#3f452f}
+#work-board .wire-bed{stroke:#f2f4ed;opacity:1;stroke-width:10}
+#work-board .wire-thread{stroke-width:4}
+#work-board[data-challenge="true"] .work-cells{height:54px}
+#work-board[data-challenge="true"] .cell-junction{font-size:12px}
+#work-dialog[data-challenge="true"] .help-row{min-height:20px}
+#work-dialog[data-challenge="true"] .help-row button{display:none}
+#work-dialog[data-challenge="true"] .help-row #work-how{font-size:11px}
+#work-board[data-challenge="true"] #work-parts{row-gap:36px}
+#work-board[data-challenge="true"]{padding-bottom:42px}
+@media(max-width:600px){.logic-results{grid-auto-flow:row;grid-template-columns:repeat(2,minmax(0,1fr))}.logic-results .work-bulb{height:90px}.logic-results .result-card strong{font-size:12px;min-height:36px}}
+@media(min-width:700px) and (max-height:850px){#work-dialog[data-challenge="true"]{padding-top:12px;padding-bottom:12px}#work-dialog[data-challenge="true"] .work-heading{top:-12px}#work-dialog[data-challenge="true"] .work-actions{bottom:-12px;margin-top:6px;padding:6px 0}#work-dialog[data-challenge="true"] #work-step{font-size:11px}#work-dialog[data-challenge="true"] .work-heading h2{font-size:21px}#work-dialog[data-challenge="true"] #work-situation{margin-top:2px}#work-board[data-challenge="true"]{padding-top:10px;padding-bottom:36px}#work-board[data-challenge="true"] .work-switch{min-height:60px}}
+@media(min-width:700px) and (max-height:850px){.result-card .work-bulb{height:122px}.result-card{padding-top:10px;padding-bottom:10px}.learning-dialog .learning-choices button{min-height:48px}.learning-dialog h3{margin:10px 0}}
+.component-lead{fill:none;stroke:#527c7b;stroke-width:2.5;pointer-events:none;stroke-linejoin:round}.diagram-material{display:block;height:36px;width:100%;max-width:150px;margin:auto;fill:none;stroke:#527c7b;stroke-width:2.5}.diagram-material .conductor{fill:#cc9270}.diagram-material .insulator{fill:#d4ded7}
+
+#work-board[data-bulbs="1"][data-challenge="true"] .work-part h3{color:#244d55;box-shadow:none;border:0}
