@@ -1,8 +1,8 @@
-import {createLearningPanel} from './learning-panel.js?v=trial-20261119-8';
-import {hasEvidence} from './inquiry-model.js?v=trial-20261119-8';
-import {MISSIONS,freshDraft,checkMission,simulate,shortWireIndices} from './mission-model.js?v=trial-20261119-8';
+import {createLearningPanel} from './learning-panel.js?v=trial-20261119-9';
+import {hasEvidence} from './inquiry-model.js?v=trial-20261119-9';
+import {MISSIONS,freshDraft,checkMission,simulate,shortWireIndices} from './mission-model.js?v=trial-20261119-9';
 import {bulbArt} from './circuit-art.js';
-import {BRIEFS,nextHint,diagnosis,experiments,observationText,OBJECTIVES} from './mission-guide.js?v=trial-20261119-8';
+import {BRIEFS,nextHint,diagnosis,experiments,observationText,OBJECTIVES} from './mission-guide.js?v=trial-20261119-9';
 
 const copy=d=>JSON.parse(JSON.stringify(d));
 export function createMissionPanel({onChange,onComplete,onClose}){

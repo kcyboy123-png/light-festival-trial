@@ -1,5 +1,5 @@
-import {LABS,CIRCUIT_QUESTIONS,LAB_QUESTIONS,circuitKey,labState,labPassed,labHint} from './inquiry-model.js?v=trial-20261119-8';
-import {MISSIONS,simulate,freshDraft} from './mission-model.js?v=trial-20261119-8';
+import {LABS,CIRCUIT_QUESTIONS,LAB_QUESTIONS,circuitKey,labState,labPassed,labHint} from './inquiry-model.js?v=trial-20261119-9';
+import {MISSIONS,simulate,freshDraft} from './mission-model.js?v=trial-20261119-9';
 import {bulbArt} from './circuit-art.js';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

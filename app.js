@@ -8,7 +8,7 @@ import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {createWorld} from './world.js?v=trial-20261119-4';
 import {nearestNode,route,walkStep,canTraverse} from './navigation.js';
 import {createExplorationInput} from './exploration-input.js';
-import {createGame} from './game.js?v=trial-20261119-8';
+import {createGame} from './game.js?v=trial-20261119-9';
 import {safeFollowAngle} from './camera-follow.js';
 import {initialQuality} from './quality-policy.js';
 import {createArrival} from './arrival.js?v=trial-20261119-4';
