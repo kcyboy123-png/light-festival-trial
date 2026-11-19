@@ -7,7 +7,7 @@ export const MISSIONS=[...OLD.slice(0,6),
  {title:'꽃잎 분수',task:'두 고장을 고쳐 밝게 켜고, 스위치로 끌 수 있게 해요.',bulbs:1,switches:1,kind:'cells',cells:2,flipped:true,challenge:true,wires:[['p','s1'],['s2','a1'],['a2','n'],['s1','s2']],lesson:'불이 켜지는 것과 스위치로 끌 수 있는 것은 따로 확인해야 해요.'},
  {title:'분수 정원',task:'A와 B를 모두 닫았을 때만 켜지는 회로를 만들어요.',bulbs:1,switches:2,kind:'both',challenge:true,wires:[['a2','n']],lesson:'두 스위치를 모두 지나는 한 길에서는 하나라도 열면 전기가 흐르지 않아요.'},
  {title:'회전목마 꽃길',task:'A와 B 중 어느 하나만 닫아도 켜지게 만들어요.',bulbs:1,switches:2,kind:'either',challenge:true,wires:[['p','s1'],['s2','t1'],['t2','a1'],['a2','n']],lesson:'스위치마다 따로 이어진 길이 있으면 한쪽을 열어도 다른 길로 흐를 수 있어요.'},
- {title:'회전목마 광장',task:'밝기·재료·두 스위치를 함께 살펴 안전 회로를 고쳐요.',bulbs:1,switches:2,kind:'both',cells:2,flipped:true,material:true,challenge:true,wires:[['p','s1'],['s2','t1'],['t2','m1'],['m2','a1'],['a2','n'],['s1','t2']],lesson:'전지 방향과 재료를 고친 뒤에도 두 스위치의 네 가지 상태를 모두 확인해야 해요.'}
+ {title:'회전목마 광장',task:'밝기·재료·두 스위치를 함께 살펴 안전 회로를 고쳐요.',bulbs:1,switches:2,kind:'both',cells:2,flipped:true,material:true,challenge:true,wires:[['p','s1'],['p','t1'],['s2','m1'],['t2','m1'],['m2','a1'],['a2','n'],['m1','a1']],lesson:'전지 방향과 재료를 고친 뒤에도 두 스위치의 네 가지 상태를 모두 확인해야 해요.'}
 ];
 MISSIONS[4]={...OLD[3],title:'별빛 정원',task:'재료와 전선을 살펴 두 고장을 고쳐요.',wires:[['p','m1'],['a2','n']],lesson:'재료를 바꿔도 안 켜지면 다른 끊긴 곳도 확인해요.'};
 export function checkCompletion(i,d){return checkMission(MISSIONS[i],d).passed&&hasEvidence(i,d);}
