@@ -165,3 +165,14 @@
 .component-lead{fill:none;stroke:#527c7b;stroke-width:2.5;pointer-events:none;stroke-linejoin:round}.diagram-material{display:block;height:36px;width:100%;max-width:150px;margin:auto;fill:none;stroke:#527c7b;stroke-width:2.5}.diagram-material .conductor{fill:#cc9270}.diagram-material .insulator{fill:#d4ded7}
 
 #work-board[data-bulbs="1"][data-challenge="true"] .work-part h3{color:#244d55;box-shadow:none;border:0}
+
+/* A connection is an action on a named component, never an unexplained floating dot. */
+#work-board .connect-point,#work-board[data-challenge="true"] .connect-point{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:64px;height:52px;min-height:52px;flex-shrink:0;border-radius:10px;border-width:2px;line-height:1.15;font-size:13px}
+#work-board .connect-point.positive>span,#work-board .connect-point.negative>span{font-size:23px;line-height:22px}
+.connect-point .port-action{font-size:10px;font-weight:600;white-space:nowrap;pointer-events:none}
+#work-board[data-challenge="false"] .work-part{background:#dae5df;border:1px solid #adc5bb;border-radius:16px;padding-top:8px;padding-bottom:8px;box-shadow:inset 0 1px 0 #f6faf0}
+#work-board[data-challenge="false"] .connection-ends{padding:0 8px}
+#work-board[data-challenge="false"] .component-lead{stroke:#9b7844;stroke-width:3.5}
+#work-board .connection-ends{gap:6px}
+#work-board .lamp-status{pointer-events:none}
+@media(max-width:699px){#work-board .connect-point,#work-board[data-challenge="true"] .connect-point{width:48px;min-width:48px;font-size:12px}#work-board[data-challenge="false"] .connection-ends{padding:0 2px}.connect-point .port-action{font-size:9px}}
